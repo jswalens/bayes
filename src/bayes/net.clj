@@ -39,7 +39,11 @@
               (:child-id-list (nth net id)))
             (conj visited id)))))))
 
-;(defn- insert-edge [net from-id to-id] TODO)
+(defn- insert-edge [net from-id to-id]
+  "Returns `net` with an edge added from `from-id` to `to-id`."
+  (-> net
+    (update-in [to-id :parent-id-list] conj from-id)
+    (update-in [from-id :child-id-list] conj to-id)))
 
 (defn generate-random-edges [net max-num-parent percent-parent]
   "Extends `net` with random edges, maximally `max-num-parent` for each node
