@@ -1,5 +1,8 @@
 (ns bayes.data
-  (:require [bayes.net :as net]))
+  (:require [clojure.math.numeric-tower :as math]
+            [bayes.net :as net]))
+
+(def ^:const DATA_PRECISION 100)
 
 (defn alloc [n-var n-record]
   "Allocate data structure.
@@ -13,16 +16,20 @@
   "Generate data.
 
   Compared to C++ version, doesn't take a seed."
-  ; Generate random Bayesian network
-  (let [net (net/alloc (:n-var data))]
-    (net/generate-random-edges net max-num-parent percent-parent))
-  ; TODO
-  ; Create a threshold for each of the possible permutation of variable value instances
-  ; TODO
-  ; Create variable dependency ordering for record generation
-  ; TODO
-  ; Create records
-  ; TODO
-  ; Clean up
-  ; TODO
-  nil)
+  (let [; Generate random Bayesian network
+        net
+          (net/generate-random-edges
+            (net/alloc (:n-var data)) max-num-parent percent-parent)
+        ; Create a threshold for each of the possible permutations of variable
+        ; value instances
+        thresholds
+          (for [v (range (:n-var data))]
+            (for [t (range (math/expt 2 (count (get-parent-id-list net v))))]
+              (rand-int (inc DATA_PRECISION))))]
+    ; Create variable dependency ordering for record generation
+    ; TODO
+    ; Create records
+    ; TODO
+    ; Clean up
+    ; TODO
+    nil))
