@@ -14,7 +14,8 @@
 
   Compared to C++ version, doesn't take a seed."
   ; Generate random Bayesian network
-  (net/alloc (:n-var data))
+  (let [net (net/alloc (:n-var data))]
+    (net/generate-random-edges net max-num-parent percent-parent))
   ; TODO
   ; Create a threshold for each of the possible permutation of variable value instances
   ; TODO
