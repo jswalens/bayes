@@ -1,6 +1,7 @@
 (ns bayes.main
   (:gen-class)
-  (:require [taoensso.timbre.profiling :refer [profile]]))
+  (:require [bayes.data :as data]
+            [taoensso.timbre.profiling :refer [profile]]))
 
 (def default-params
   {:edge    -1
@@ -24,7 +25,7 @@ Options:                                         (defaults)
     p <UINT>   [p]ercent chance of parent        (10)
     q <FLT>    Operation [q]uality factor        (1.0)
     r <UINT>   Number of [r]ecords               (4096)
-    s <UINT>   Random [s]eed                     (1)
+    s <UINT>   Random [s]eed (IGNORED)           (1)
     t <UINT>   Number of [t]hreads               (1)
     v <UINT>   Number of [v]ariables             (32)
 ")
@@ -49,12 +50,20 @@ Options:                                         (defaults)
     (println "Max num edge learned / var =" (:edge params))
     (println "Operation quality factor   =" (:quality params))
     ; Generate data
-    ; Generate adtree
-    ; Score original network
-    ; Learn structure of Bayesian network
-    ; Check solution
-    ; Clean up
-    (shutdown-agents)))
+    (println "Generating data...")
+    (let [data (data/alloc (:var params) (:record params))
+          net  (data/generate data (:number params) (:percent params))]
+      (println "done.")
+      ; Generate adtree
+      ; TODO
+      ; Score original network
+      ; TODO
+      ; Learn structure of Bayesian network
+      ; TODO
+      ; Check solution
+      ; TODO
+      ; Clean up
+      (shutdown-agents))))
 
 ; To run manually:
 ;(main *command-line-args*)
