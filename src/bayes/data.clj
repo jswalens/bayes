@@ -1,4 +1,5 @@
-(ns bayes.data)
+(ns bayes.data
+  (:require [bayes.net :as net]))
 
 (defn alloc [n-var n-record]
   "Allocate data structure.
@@ -13,6 +14,7 @@
 
   Compared to C++ version, doesn't take a seed."
   ; Generate random Bayesian network
+  (net/alloc (:n-var data))
   ; TODO
   ; Create a threshold for each of the possible permutation of variable value instances
   ; TODO
