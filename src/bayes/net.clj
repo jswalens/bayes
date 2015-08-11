@@ -42,6 +42,9 @@
 (defn get-parent-id-list [net id]
   (:parent-id-list (nth net id)))
 
+(defn get-child-id-list [net id]
+  (:child-id-list (nth net id)))
+
 (defn- insert-edge [net from-id to-id]
   "Returns `net` with an edge added from `from-id` to `to-id`."
   (-> net

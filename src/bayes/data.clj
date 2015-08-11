@@ -24,10 +24,16 @@
         ; value instances
         thresholds
           (for [v (range (:n-var data))]
-            (for [t (range (math/expt 2 (count (get-parent-id-list net v))))]
+            (for [t (range (math/expt 2 (count (net/get-parent-id-list net v))))]
               (rand-int (inc DATA_PRECISION))))]
     ; Create variable dependency ordering for record generation
-    ; TODO
+    ;(loop [order        []
+    ;       queue        []
+    ;       dependencies []
+    ;       ordered      ...
+    ;       done         ...]
+    ;  (let [v (bitmap/find-clear done (vorige v + 1))]
+    ;    (if (not= (count (net/get-child-id-list net v)) 0))))
     ; Create records
     ; TODO
     ; Clean up
