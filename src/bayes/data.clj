@@ -11,18 +11,22 @@
   In C++, this allocates :records to the right length, in Clojure we don't care."
   {:n-var    n-var
    :n-record n-record
-   :records  []}) ; will eventually have length n-var * n-record
+   :records  []}) ; map record -> list of variables (of length n-var) (see generate)
 
 (defn generate [data max-num-parent percent-parent]
-  "Generate data.
+  "Generate data, returns `{:data data :net net}`.
 
-  Compared to C++ version, doesn't take a seed."
+  As opposed to C++ version, this doesn't take a seed."
   (let [; Generate random Bayesian network
         net
           (net/generate-random-edges
             (net/alloc (:n-var data)) max-num-parent percent-parent)
         ; Create a threshold for each of the possible permutations of variable
         ; value instances
+        ; In the C++ version, this is a 2D array variable -> bitmap -> (random)
+        ; int. The bitmap has length = the variable's number of parents. All
+        ; permutations of the bitmap are iterated through. So, given a variable
+        ; and an on/off state for each of its parents, this returns an integer.
         thresholds
           (for [v (range (:n-var data))]
             (for [t (range (math/expt 2 (count (net/get-parent-id-list net v))))]
@@ -65,9 +69,13 @@
                           order
                           dependencies)]
                   (recur (bitmap/find-clear done (inc id))
-                    updated-order updated-done)))))]
-    ; Create records
-    ; TODO
-    ; Clean up
-    ; TODO
-    nil))
+                    updated-order updated-done)))))
+        ; Create records
+        records
+          (comment (for [r (range (:n-record data))]
+            (for [o (range (:n-var data))]
+              (let [v (nth order o)
+                    parent-id-list (net/get-parent-id-list net v)]
+                )))))]
+    ; Return
+    {:data (assoc data :records records) :net net}))
