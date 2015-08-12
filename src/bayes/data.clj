@@ -11,7 +11,19 @@
   In C++, this allocates :records to the right length, in Clojure we don't care."
   {:n-var    n-var
    :n-record n-record
-   :records  []}) ; map record -> list of variables (of length n-var) (see generate)
+   ; records is a map record id -> list of variables (of length n-var) ->
+   ; 0 or 1 (see generate)
+   :records  []})
+
+(defn- bits->bitmap [bits]
+  "Convert a list of 0 and 1 to a bitmap, i.e. an int where each bit is set
+  correspondingly.
+  (bits->bitmap (list 1 0 1)) => 0b101"
+  (reduce
+    (fn [bitmap bit]
+      (+ (* bitmap 2) bit))
+    0
+    bits))
 
 (defn generate [data max-num-parent percent-parent]
   "Generate data, returns `{:data data :net net}`.
@@ -31,7 +43,10 @@
           (for [v (range (:n-var data))]
             (for [t (range (math/expt 2 (count (net/get-parent-id-list net v))))]
               (rand-int (inc DATA_PRECISION))))
-        ; Create variable dependency ordering for record generation
+        ; Create variable dependency ordering for record generation.
+        ; Each of order[i]'s parents are sorted before i in order, i.e.
+        ; for all i: for all p in parents[order[i]]:
+        ; index-of(p in order) < i   [1]
         order
           (loop [; id of node currently being visited
                  id      0
@@ -72,10 +87,25 @@
                     updated-order updated-done)))))
         ; Create records
         records
-          (comment (for [r (range (:n-record data))]
-            (for [o (range (:n-var data))]
-              (let [v (nth order o)
-                    parent-id-list (net/get-parent-id-list net v)]
-                )))))]
+          (for [r (range (:n-record data))]
+            (reduce
+              (fn [record o]
+                (let [v (nth order o)
+                      values ; list of 0s and 1s
+                        (for [p (net/get-parent-id-list net v)]
+                          ; ordering ensures that p < o (see [1]), so record
+                          ; will have an index p at iteration o of the reduce
+                          (nth record p))
+                      bitmap
+                        (bits->bitmap values)
+                      threshold
+                        (get-in thresholds [v bitmap])
+                      rnd
+                        (rand-int DATA_PRECISION)]
+                  (if (< rnd threshold)
+                    1
+                    0)))
+              []
+              (range (:n-var data))))]
     ; Return
     {:data (assoc data :records records) :net net}))
