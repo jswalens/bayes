@@ -48,11 +48,13 @@
                         (loop [queue        [id]
                                updated-done done
                                dependencies []]
-                          (recur
-                            (concat queue
-                              (net/get-parent-id-list net (first queue)))
-                            (bitmap/set updated-done (first queue))
-                            (conj dependencies (first queue))))
+                          (if (empty? queue)
+                            [updated-done dependencies]
+                            (recur
+                              (concat queue
+                                (net/get-parent-id-list net (first queue)))
+                              (bitmap/set updated-done (first queue))
+                              (conj dependencies (first queue)))))
                       ; Create ordering
                       updated-order
                         (reduce
