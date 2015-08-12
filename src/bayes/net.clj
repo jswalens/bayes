@@ -36,7 +36,7 @@
         (if (= id to-id)
           true
           (recur
-            (concat queue
+            (concat (rest queue)
               (filter #(not (.contains visited %))
                 (get-child-id-list net id)))
             (conj visited id)))))))
