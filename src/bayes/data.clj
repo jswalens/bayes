@@ -70,7 +70,7 @@
                           (if (empty? queue)
                             [updated-done dependencies]
                             (recur
-                              (concat queue
+                              (concat (rest queue)
                                 (net/get-parent-id-list net (first queue)))
                               (bitmap/set updated-done (first queue))
                               (conj dependencies (first queue)))))
