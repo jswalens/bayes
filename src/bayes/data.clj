@@ -27,13 +27,33 @@
             (for [t (range (math/expt 2 (count (net/get-parent-id-list net v))))]
               (rand-int (inc DATA_PRECISION))))]
     ; Create variable dependency ordering for record generation
-    ;(loop [order        []
-    ;       queue        []
-    ;       dependencies []
-    ;       ordered      ...
-    ;       done         ...]
-    ;  (let [v (bitmap/find-clear done (vorige v + 1))]
-    ;    (if (not= (count (net/get-child-id-list net v)) 0))))
+    #_(loop [order        []
+           queue        []
+           dependencies []
+           ordered      ...
+           done         ...]
+      (let [v (bitmap/find-clear done (vorige v + 1))]
+        (if (< v 0)
+          ...break out of loop...
+          (if (not= (count (net/get-child-id-list net v)) 0)
+            (recur order queue dependencies ordered done)
+            (let [; Use breadth-first search to find net connected to this leaf
+                  [new-queue updated-done updated-dependencies]
+                    (reduce
+                      (fn [{q :queue don :done dep :dependencies} id]
+                        {:queue
+                          (reduce
+                            (fn [q_ parent-id]
+                              (conj q_ parent-id))
+                            q
+                            (net/get-parent-id-list net id))
+                         :done         ...set id to true in done...
+                         :dependencies (conj dep id)})
+                      {:queue [] :done done :dependencies dependencies}
+                      queue)
+                  ; Create ordering
+                  ...]
+              (recur ...))))))
     ; Create records
     ; TODO
     ; Clean up
