@@ -33,8 +33,6 @@
                  id      0
                  ; order of node ids
                  order   []
-                 ; nodes that have been put in order
-                 ordered (bitmap/create (:n-var data))
                  ; nodes that have been visited
                  done    (bitmap/create (:n-var data))]
             (if (nil? id)
@@ -43,7 +41,7 @@
                 ; This node has children
                 (recur
                   (bitmap/find-clear done (inc id))
-                  order dependencies ordered done)
+                  order dependencies done)
                 ; This node has no children
                 (let [; Use breadth-first search to find net connected to this leaf
                       [updated-done dependencies]
@@ -59,17 +57,16 @@
                             (bitmap/set updated-done (first queue))
                             (conj dependencies (first queue))))
                       ; Create ordering
-                      [updated-order updated-ordered]
+                      updated-order
                         (reduce
-                          (fn [[order_ ordered_] dep]
-                            (if (not (bitmap/is-set? ordered_ dep))
-                              [(conj order dep)
-                               (bitmap/set ordered_ dep)]
-                              [order_ ordered_]))
-                          [order ordered]
+                          (fn [order_ dep]
+                            (if (not (.contains order_ dep))
+                              (conj order dep)
+                              order_))
+                          order
                           dependencies)]
                   (recur (bitmap/find-clear done (inc id))
-                    updated-order updated-ordered updated-done))))))]
+                    updated-order updated-done))))))]
     ; Create records
     ; TODO
     ; Clean up
