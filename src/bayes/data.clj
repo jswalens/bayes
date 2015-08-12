@@ -29,40 +29,47 @@
               (rand-int (inc DATA_PRECISION))))
         ; Create variable dependency ordering for record generation
         order
-          (loop [order   []
-                 queue   []
+          (loop [; id of node currently being visited
+                 id      0
+                 ; order of node ids
+                 order   []
+                 ; nodes that have been put in order
                  ordered (bitmap/create (:n-var data))
+                 ; nodes that have been visited
                  done    (bitmap/create (:n-var data))]
-            (let [v (bitmap/find-clear done (vorige v + 1))]
-              (if (< v 0)
-                order
-                (if (not= (count (net/get-child-id-list net v)) 0)
-                  (recur order queue dependencies ordered done)
-                  (let [; Use breadth-first search to find net connected to this leaf
-                        {new-queue :queue updated-done :done dependencies :dependencies}
-                          (reduce
-                            (fn [{q :queue don :done dep :dependencies} id]
-                              {:queue
-                                (reduce
-                                  (fn [q_ parent-id]
-                                    (conj q_ parent-id))
-                                  q
-                                  (net/get-parent-id-list net id))
-                               :done         (bitmap/set done id)
-                               :dependencies (conj dep id)})
-                            {:queue [] :done done :dependencies []}
-                            queue)
-                        ; Create ordering
-                        [updated-order updated-ordered]
-                          (reduce
-                            (fn [[order_ ordered_] dep]
-                              (if (not (bitmap/is-set? ordered_ dep))
-                                [(conj order dep)
-                                 (bitmap/set ordered_ dep)]
-                                [order_ ordered_]))
-                            [order ordered]
-                            dependencies)]
-                    (recur updated-order new-queue updated-ordered updated-done))))))]
+            (if (nil? id)
+              order ; bitmap/find-clear found no more nodes
+              (if (not= (count (net/get-child-id-list net id)) 0)
+                ; This node has children
+                (recur
+                  (bitmap/find-clear done (inc id))
+                  order dependencies ordered done)
+                ; This node has no children
+                (let [; Use breadth-first search to find net connected to this leaf
+                      [updated-done dependencies]
+                        (loop [queue        [id]
+                               updated-done done
+                               dependencies []]
+                          (recur
+                            (reduce
+                              (fn [q_ parent-id]
+                                (conj q_ parent-id))
+                              q
+                              (net/get-parent-id-list net (first queue)))
+                            (bitmap/set updated-done (first queue))
+                            (conj dependencies (first queue))))
+                      ; Create ordering
+                      [updated-order updated-ordered]
+                        (reduce
+                          (fn [[order_ ordered_] dep]
+                            (if (not (bitmap/is-set? ordered_ dep))
+                              [(conj order dep)
+                               (bitmap/set ordered_ dep)]
+                              [order_ ordered_]))
+                          [order ordered]
+                          dependencies)]
+                  (recur (bitmap/find-clear done (inc id))
+                    updated-order updated-ordered updated-done))))))]
     ; Create records
     ; TODO
     ; Clean up
