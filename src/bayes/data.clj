@@ -41,7 +41,7 @@
                 ; This node has children
                 (recur
                   (bitmap/find-clear done (inc id))
-                  order dependencies done)
+                  order done)
                 ; This node has no children, it is a leaf
                 (let [; Use breadth-first search to find net connected to this leaf
                       [updated-done dependencies]
@@ -65,7 +65,7 @@
                           order
                           dependencies)]
                   (recur (bitmap/find-clear done (inc id))
-                    updated-order updated-done))))))]
+                    updated-order updated-done)))))]
     ; Create records
     ; TODO
     ; Clean up

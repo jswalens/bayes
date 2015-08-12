@@ -65,5 +65,5 @@
     net
     (for [n (range (count net))
           p (range max-num-parent)]
-      [n p]])))
+      [n p])))
     ; TODO: assert (not (is-cycle? net). Or not?
