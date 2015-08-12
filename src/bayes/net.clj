@@ -16,9 +16,15 @@
   "Returns a net of `n` nodes."
   (map alloc-node (range n)))
 
+(defn get-parent-id-list [net id]
+  (:parent-id-list (nth net id)))
+
+(defn get-child-id-list [net id]
+  (:child-id-list (nth net id)))
+
 (defn has-edge? [net from-id to-id]
   "Does `net` have an edge between the nodes with ids `from-id` and `to-id`?"
-  (.contains (:parent-id-list (nth net to-id)) from-id))
+  (.contains (get-parent-id-list net to-id) from-id))
 
 (defn is-path? [net from-id to-id]
   "Returns true if there is a path from `from-id` to `to-id` in `net`."
@@ -30,20 +36,10 @@
         (if (= id to-id)
           true
           (recur
-            (reduce ; add children to queue if not visited
-              (fn [q i]
-                (if (not (.contains visited i))
-                  (conj q i)
-                  q))
-              queue
-              (:child-id-list (nth net id)))
+            (concat queue
+              (filter #(not (.contains visited %))
+                (get-child-id-list net id)))
             (conj visited id)))))))
-
-(defn get-parent-id-list [net id]
-  (:parent-id-list (nth net id)))
-
-(defn get-child-id-list [net id]
-  (:child-id-list (nth net id)))
 
 (defn- insert-edge [net from-id to-id]
   "Returns `net` with an edge added from `from-id` to `to-id`."
