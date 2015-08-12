@@ -50,9 +50,9 @@
                                dependencies []]
                           (recur
                             (reduce
-                              (fn [q_ parent-id]
-                                (conj q_ parent-id))
-                              q
+                              (fn [q parent-id]
+                                (conj q parent-id))
+                              queue
                               (net/get-parent-id-list net (first queue)))
                             (bitmap/set updated-done (first queue))
                             (conj dependencies (first queue))))
