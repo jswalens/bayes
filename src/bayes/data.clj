@@ -42,17 +42,14 @@
                 (recur
                   (bitmap/find-clear done (inc id))
                   order dependencies done)
-                ; This node has no children
+                ; This node has no children, it is a leaf
                 (let [; Use breadth-first search to find net connected to this leaf
                       [updated-done dependencies]
                         (loop [queue        [id]
                                updated-done done
                                dependencies []]
                           (recur
-                            (reduce
-                              (fn [q parent-id]
-                                (conj q parent-id))
-                              queue
+                            (concat queue
                               (net/get-parent-id-list net (first queue)))
                             (bitmap/set updated-done (first queue))
                             (conj dependencies (first queue))))
