@@ -15,4 +15,9 @@
 (defn find-clear [bitmap start-index]
   "Returns the index of the first false element in `bitmap`, after
   `start-index`. Returns nil if all bits are true."
-  (first (filter false? (drop start-index bitmap))))
+  (loop [i start-index]
+    (if (< i (count bitmap))
+      (if (is-set? bitmap i)
+        (recur (inc i))
+        i)
+      nil)))
