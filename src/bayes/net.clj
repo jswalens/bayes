@@ -14,7 +14,7 @@
 
 (defn alloc [n]
   "Returns a net of `n` nodes."
-  (map alloc-node (range n)))
+  (vec (map alloc-node (range n))))
 
 (defn get-parent-id-list [net id]
   (:parent-id-list (nth net id)))
