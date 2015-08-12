@@ -61,7 +61,9 @@
           (if (and (not= parent n)
                    (not (has-edge? net parent n))
                    (not (is-path? net n parent)))
-            (insert-edge net parent n)))))
+            (insert-edge net parent n)
+            net))
+        net))
     net
     (for [n (range (count net))
           p (range max-num-parent)]
