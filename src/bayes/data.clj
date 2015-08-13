@@ -124,3 +124,7 @@
 (defn sort [data offset]
   "Sort records in `data`, based on values in column `offset` and afterwards."
   (clojure.core/sort compare-record (:records data)))
+
+(defn find-split [data start num offset]
+  "TODO"
+  0)
