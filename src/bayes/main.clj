@@ -53,6 +53,8 @@ Options:                                         (defaults)
     (println "Generating data...")
     (let [data (data/alloc (:var params) (:record params))
           net  (data/generate data (:number params) (:percent params))]
+      (println data)
+      (println net)
       (println "done.")
       ; Generate adtree
       ; TODO

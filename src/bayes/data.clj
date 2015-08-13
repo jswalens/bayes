@@ -99,7 +99,7 @@
                       bitmap
                         (bits->bitmap values)
                       threshold
-                        (get-in thresholds [v bitmap])
+                        (nth (nth thresholds v) bitmap)
                       rnd
                         (rand-int DATA_PRECISION)]
                   (if (< rnd threshold)
