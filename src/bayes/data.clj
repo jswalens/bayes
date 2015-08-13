@@ -82,10 +82,7 @@
                               (conj dependencies (first queue)))))
                       ; Create ordering
                       updated-order
-                        (reduce
-                          conj-uniq
-                          order
-                          (reverse dependencies))]
+                        (reduce conj-uniq order (reverse dependencies))]
                   (recur (bitmap/find-clear done (inc id))
                     updated-order updated-done)))))
         ; Create records
