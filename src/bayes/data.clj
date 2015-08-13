@@ -109,3 +109,18 @@
               (range (:n-var data))))]
     ; Return
     {:data (assoc data :records records) :net net}))
+
+(defn- compare-record [a b offset]
+  "Compare records `a` and `b` by a lexicographic order on its columns starting
+  at `offset`.
+  Assumes `a` and `b` are the same size."
+  (let [c (compare (nth a offset) (nth b offset))]
+    (if (= c 0)
+      (if (= (inc offset) (count a))
+        0
+        (compare-record a b (inc offset)))
+      c)))
+
+(defn sort [data offset]
+  "Sort records in `data`, based on values in column `offset` and afterwards."
+  (sort compare-record (:records data)))
