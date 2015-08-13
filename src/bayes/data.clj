@@ -75,11 +75,11 @@
                                dependencies []]
                           (if (empty? queue)
                             [updated-done dependencies]
-                            (recur
-                              (concat (rest queue)
-                                (net/get-parent-id-list net (first queue)))
-                              (bitmap/set updated-done (first queue))
-                              (conj dependencies (first queue)))))
+                            (let [[fst & rst] queue]
+                              (recur
+                                (concat rst (net/get-parent-id-list net fst))
+                                (bitmap/set updated-done fst)
+                                (conj dependencies fst)))))
                       ; Create ordering
                       updated-order
                         (reduce conj-uniq order (reverse dependencies))]
