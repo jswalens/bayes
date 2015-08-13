@@ -25,6 +25,12 @@
     0
     bits))
 
+(defn- conj-uniq [coll x]
+  "Conjoins `x` to `coll`, as conj, but only if `coll` doesn't contain x."
+  (if (.contains coll x)
+    coll
+    (conj coll x)))
+
 (defn generate [data max-num-parent percent-parent]
   "Generate data, returns `{:data data :net net}`.
 
@@ -77,10 +83,7 @@
                       ; Create ordering
                       updated-order
                         (reduce
-                          (fn [order_ dep]
-                            (if (not (.contains order_ dep))
-                              (conj order dep)
-                              order_))
+                          conj-uniq
                           order
                           (reverse dependencies))]
                   (recur (bitmap/find-clear done (inc id))
