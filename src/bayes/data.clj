@@ -116,11 +116,11 @@
   Assumes `a` and `b` are the same size."
   (let [c (compare (nth a offset) (nth b offset))]
     (if (= c 0)
-      (if (= (inc offset) (count a))
+      (if (>= (inc offset) (count a))
         0
         (compare-record a b (inc offset)))
       c)))
 
 (defn sort [data offset]
   "Sort records in `data`, based on values in column `offset` and afterwards."
-  (sort compare-record (:records data)))
+  (clojure.core/sort compare-record (:records data)))
