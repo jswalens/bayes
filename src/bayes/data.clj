@@ -82,7 +82,7 @@
                               (conj order dep)
                               order_))
                           order
-                          dependencies)]
+                          (reverse dependencies))]
                   (recur (bitmap/find-clear done (inc id))
                     updated-order updated-done)))))
         ; Create records
