@@ -11,8 +11,8 @@
   In C++, this allocates :records to the right length, in Clojure we don't care."
   {:n-var    n-var
    :n-record n-record
-   ; records is a map record id -> list of variables (of length n-var) ->
-   ; 0 or 1 (see generate)
+   ; records is a list mapping each record id to a record, which is a list of 0s
+   ; and 1s of length n-var (see generate)
    :records  []})
 
 (defn- bits->bitmap [bits]
