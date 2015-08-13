@@ -90,22 +90,22 @@
           (for [r (range (:n-record data))]
             (reduce
               (fn [record o]
-                (let [v (nth order o)
+                (let [id (nth order o)
                       values ; list of 0s and 1s
-                        (for [p (net/get-parent-id-list net v)]
+                        (for [p (net/get-parent-id-list net id)]
                           ; ordering ensures that p < o (see [1]), so record
                           ; will have an index p at iteration o of the reduce
                           (nth record p))
                       bitmap
                         (bits->bitmap values)
                       threshold
-                        (nth (nth thresholds v) bitmap)
+                        (nth (nth thresholds id) bitmap)
                       rnd
                         (rand-int DATA_PRECISION)]
                   (if (< rnd threshold)
-                    1
-                    0)))
-              []
+                    (assoc record id 1)
+                    (assoc record id 0))))
+              (vec (repeat (:n-var data) 0))
               (range (:n-var data))))]
     ; Return
     {:data (assoc data :records records) :net net}))
