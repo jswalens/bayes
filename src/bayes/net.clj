@@ -1,4 +1,5 @@
-(ns bayes.net)
+(ns bayes.net
+  (:require [priority-queue]))
 
 ; Net node marks:
 ; :init
@@ -8,8 +9,8 @@
 (defn- alloc-node [id]
   "Returns an empty node with `id`."
   {:id             id
-   :parent-id-list [] ; list of parent ids; TODO: ordered by comparing pointers
-   :child-id-list  [] ; list of child ids; TODO: ordered by comparing pointers
+   :parent-id-list (priority-queue/create) ; list of parent ids, ordered
+   :child-id-list  (priority-queue/create) ; list of child ids, ordered
    :net-node-mark  :init})
 
 (defn alloc [n]
@@ -44,8 +45,8 @@
 (defn- insert-edge [net from-id to-id]
   "Returns `net` with an edge added from `from-id` to `to-id`."
   (-> net
-    (update-in [to-id :parent-id-list] conj from-id)
-    (update-in [from-id :child-id-list] conj to-id)))
+    (update-in [to-id :parent-id-list] priority-queue/add from-id)
+    (update-in [from-id :child-id-list] priority-queue/add to-id)))
 
 (defn generate-random-edges [net max-num-parent percent-parent]
   "Extends `net` with random edges, maximally `max-num-parent` for each node
