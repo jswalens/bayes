@@ -1,6 +1,7 @@
 (ns bayes.main
   (:gen-class)
   (:require [bayes.data :as data]
+            [bayes.adtree :as adtree]
             [taoensso.timbre.profiling :refer [profile]]))
 
 (def default-params
@@ -51,12 +52,13 @@ Options:                                         (defaults)
     (println "Operation quality factor   =" (:quality params))
     ; Generate data
     (println "Generating data...")
-    (let [data (data/alloc (:var params) (:record params))
-          net  (data/generate data (:number params) (:percent params))]
-      ;(log net)
-      (println "done.")
-      ; Generate adtree
-      ; TODO
+    (let [data   (data/alloc (:var params) (:record params))
+          net    (data/generate data (:number params) (:percent params))
+          _      (println "done.")
+          ; Generate adtree
+          _      (println "Generating adtree...")
+          adtree (time (adtree/make data))
+          _      (println "done.")]
       ; Score original network
       ; TODO
       ; Learn structure of Bayesian network
