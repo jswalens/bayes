@@ -50,7 +50,7 @@
 
 (declare get-count)
 
-(defn- get-count-helper [node i q query-vector last-query-index adtree]
+(defn- get-count-helper [node q query-vector last-query-index adtree]
   (cond
     (nil? node)
       0
@@ -71,13 +71,13 @@
                   inverted-query-vector
                     (update-in query-vector [q :value] swap-bit)
                   invert-count
-                    (get-count-helper node i q inverted-query-vector last-query-index adtree)]
+                    (get-count-helper node q inverted-query-vector last-query-index adtree)]
               (- super-count invert-count))
           0
-            (get-count-helper (:zero-node vary) (inc i) (inc q) query-vector
+            (get-count-helper (:zero-node vary) (inc q) query-vector
               last-query-index adtree)
           1
-            (get-count-helper (:one-node vary) (inc i) (inc q) query-vector
+            (get-count-helper (:one-node vary) (inc q) query-vector
               last-query-index adtree)
           ; QUERY_VALUE_WILDCARD
             (throw (Exception. (str "unrecognized query value " query-value)))))))
@@ -88,5 +88,5 @@
           (if (empty? query-vector)
             -1
             (:index (last query-vector)))]
-    (get-count-helper (:root-node adtree) -1 0 query-vector last-query-index
+    (get-count-helper (:root-node adtree) 0 query-vector last-query-index
       adtree)))
