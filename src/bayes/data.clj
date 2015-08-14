@@ -136,7 +136,7 @@
 (defn sort-records [data offset]
   "Sort records in `data`, based on values in column `offset` and afterwards.
   Returns sorted records."
-  (clojure.core/sort compare-record (:records data)))
+  (clojure.core/sort #(compare-record %1 %2 offset) (:records data)))
 
 (defn sort [data offset]
   "Sort records in `data`, based on values in column `offset` and afterwards.
