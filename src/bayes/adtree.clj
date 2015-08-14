@@ -37,3 +37,7 @@
    :n-record  (:n-record data)
    :root-node (make-node -1 -1 0 (:n-record data)
                 (data/sort data 0 (:n-record data) 0))})
+
+(defn get-count [adtree query-vector]
+  "TODO"
+  0)

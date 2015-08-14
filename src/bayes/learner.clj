@@ -1,5 +1,6 @@
 (ns bayes.learner
-  (:require [bayes.net :as net]))
+  (:require [bayes.net :as net]
+            [bayes.adtree :as adtree]))
 
 (def ^:const QUERY_VALUE_WILDCARD -1)
 
@@ -28,9 +29,35 @@
         query-vector (sort-queries (conj parent-query-vector (nth queries id)))]
     [query-vector parent-query-vector]))
 
+(defn- set-query-value [queries index value]
+  "Set value of query at `index` in `queries` to `value`."
+  (assoc-in queries [index :value] value))
+
+(defn- compute-specific-local-log-likelihood [adtree query-vector parent-query-vector]
+  (let [count (adtree/get-count adtree query-vector)]
+    (if (= count 0)
+      0.0
+      (let [probability (/ (double count) (double (:n-record adtree)))
+            parent-count (adtree/get-count adtree parent-query-vector)]
+        (* probability (Math/log (/ (double count) (double parent-count))))))))
+
+(defn- compute-local-log-likelihood-helper [i adtree queries query-vector parent-query-vector]
+  (if (>= i (count parent-query-vector))
+    (compute-specific-local-log-likelihood adtree query-vector parent-query-vector)
+    (+
+      (compute-local-log-likelihood-helper (inc i) adtree
+        (set-query-value queries (:index (nth parent-query-vector i)) 0)
+        query-vector parent-query-vector)
+      (compute-local-log-likelihood-helper (inc i) adtree
+        (set-query-value queries (:index (nth parent-query-vector i)) 1)
+        query-vector parent-query-vector))))
+
 (defn- compute-local-log-likelihood [id adtree queries query-vector parent-query-vector]
-  "TODO"
-  0.0)
+  (+
+    (compute-local-log-likelihood-helper 0 adtree (set-query-value queries id 0)
+      query-vector parent-query-vector)
+    (compute-local-log-likelihood-helper 0 adtree (set-query-value queries id 1)
+      query-vector parent-query-vector)))
 
 (defn- sum [ns]
   "Sums `ns`."
@@ -40,8 +67,8 @@
   (let [n-var
           (:n-var (:adtree learner))
         queries
-          (for [v (range n-var)]
-            {:index v :value QUERY_VALUE_WILDCARD})
+          (vec (for [v (range n-var)]
+            {:index v :value QUERY_VALUE_WILDCARD}))
         n-total-parent
           (sum
             (map
