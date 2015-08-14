@@ -38,6 +38,52 @@
    :root-node (make-node -1 -1 0 (:n-record data)
                 (data/sort data 0 (:n-record data) 0))})
 
+(defn- drop-one [i coll]
+  "Returns `coll` with the element at index `i` removed."
+  (concat
+    (take i coll)
+    (drop (inc i) coll)))
+
+(defn- swap-bit [i]
+  "(swap-bit 0) = 1, (swap-bit 1) = 0"
+  (- 1 i))
+
+(declare get-count)
+
+(defn- get-count-helper [node i q query-vector last-query-index adtree]
+  (if (nil? node)
+    0
+    (if (>= (:index node) last-query-index)
+      (:count node)
+      (if (>= q (count query-vector))
+        (:count node)
+        (let [query (nth query-vector q)
+              vary  (nth (:vary-vector node) (- (:index query) (:index node) 1))]
+          (condp = (:value query)
+            (:most-common-value vary)
+              (let [super-query-vector
+                      (drop-one q query-vector)
+                    super-count
+                      (get-count adtree super-query-vector)
+                    inverted-query-vector
+                      (update-in query-vector [q :value] swap-bit)
+                    invert-count
+                      (get-count-helper node i q inverted-query-vector last-query-index adtree)]
+                (- super-count invert-count))
+            0
+              (get-count-helper (:zero-node vary) (inc i) (inc q) query-vector
+                last-query-index adtree)
+            1
+              (get-count-helper (:one-node vary) (inc i) (inc q) query-vector
+                last-query-index adtree)
+            ; QUERY_VALUE_WILDCARD
+              (throw (Exception. (str "unrecognized query value " (:value query))))))))))
+
 (defn get-count [adtree query-vector]
   "TODO"
-  0)
+  (let [last-query-index
+          (if (empty? query-vector)
+            -1
+            (:index (last query-vector)))]
+    (get-count-helper (:root-node adtree) -1 0 query-vector last-query-index
+      adtree)))
