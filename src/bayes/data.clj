@@ -137,6 +137,18 @@
   "Sort records in `data`, based on values in column `offset` and afterwards."
   (clojure.core/sort compare-record (:records data)))
 
-(defn find-split [data start num offset]
-  "TODO"
-  0)
+(defn find-split [data start offset]
+  "We look at the column `offset` in each record in `data`. The first `x` should
+  be 0, the next `n - x` should be 1. [*] This returns `x`.
+
+  [*] To satisfy this condition, run data/sort on the data first.
+
+  This function uses binary search."
+  (loop [low  start
+         high (+ start (:n-record data) -1)]
+    (if (> low high)
+      (- low start)
+      (let [mid (int (/ (+ low high) 2))]
+        (if (= (get-record-var data mid offset) 0)
+          (recur (inc mid) high)
+          (recur low (dec mid)))))))
