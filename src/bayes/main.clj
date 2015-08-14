@@ -2,6 +2,7 @@
   (:gen-class)
   (:require [bayes.data :as data]
             [bayes.adtree :as adtree]
+            [bayes.learner :as learner]
             [taoensso.timbre.profiling :refer [profile]]))
 
 (def default-params
@@ -42,6 +43,12 @@ Options:                                         (defaults)
   ; TODO: actually parse arguments
   default-params)
 
+(defn score [net adtree]
+  "Score `net`."
+  (let [data    (data/alloc 1 1)
+        learner (assoc (learner/alloc data adtree) :net net)]
+    (learner/score learner)))
+
 (defn -main [& args]
   "Main function. `args` should be a list of command line arguments."
   ; Initialization
@@ -61,13 +68,16 @@ Options:                                         (defaults)
               (data/alloc (:var params) (:record params))
               (:number params)
               (:percent params))
-          _      (println "done.")
+          _ (println "done.")
           ; Generate adtree
-          _      (println "Generating adtree...")
-          adtree (time (adtree/make data))
-          _      (println "done.")]
-      ; Score original network
-      ; TODO
+          _ (println "Generating adtree...")
+          adtree
+            (time (adtree/make data))
+          _ (println "done.")
+          ; Score original network
+          actual-score
+            (score net adtree)
+          _ (println "actual score:" actual-score)]
       ; Learn structure of Bayesian network
       ; TODO
       ; Check solution
