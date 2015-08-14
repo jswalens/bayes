@@ -30,7 +30,7 @@
 
 (defn- compute-local-log-likelihood [id adtree queries query-vector parent-query-vector]
   "TODO"
-  [0.0 queries])
+  0.0)
 
 (defn- sum [ns]
   "Sums `ns`."
@@ -39,7 +39,7 @@
 (defn score [learner]
   (let [n-var
           (:n-var (:adtree learner))
-        initial-queries
+        queries
           (for [v (range n-var)]
             {:index v :value QUERY_VALUE_WILDCARD})
         n-total-parent
@@ -48,20 +48,17 @@
               (fn [v] (count (net/get-parent-id-list (:net learner) v)))
               (range n-var)))
         log-likelihood
-          (first
-            (reduce
-              (fn [[log-likelihood queries] v]
+          (sum
+            (map
+              (fn [v]
                 (let [[query-vector parent-query-vector]
-                        (populate-query-vectors (:net learner) v queries)
-                      [local-log-likelihood updated-queries]
-                        (compute-local-log-likelihood
-                          v
-                          (:adtree learner)
-                          queries
-                          query-vector
-                          parent-query-vector)]
-                [(+ log-likelihood local-log-likelihood) updated-queries]))
-              [0 initial-queries]
+                        (populate-query-vectors (:net learner) v queries)]
+                  (compute-local-log-likelihood
+                    v
+                    (:adtree learner)
+                    queries
+                    query-vector
+                    parent-query-vector)))
               (range n-var)))
         n-record
           (:n-record (:adtree learner))
