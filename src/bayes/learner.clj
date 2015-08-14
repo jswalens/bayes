@@ -16,14 +16,16 @@
    :task-list                  (list) ; TODO: sorted by compareTask
    :n-total-parent             0})
 
+(defn- sort-queries [queries]
+  "Sort a list of queries by their index."
+  (sort-by :index queries))
+
 (defn- populate-parent-query-vector [net id queries]
   (map #(nth queries %) (net/get-parent-id-list net id)))
 
 (defn- populate-query-vectors [net id queries]
   (let [parent-query-vector (populate-parent-query-vector net id queries)
-        query-vector (conj parent-query-vector (nth queries id))
-        ; TODO: sort query-vector by compareQuery
-        ]
+        query-vector (sort-queries (conj parent-query-vector (nth queries id)))]
     [query-vector parent-query-vector]))
 
 (defn- compute-local-log-likelihood [id adtree queries query-vector parent-query-vector]
