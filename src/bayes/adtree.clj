@@ -28,8 +28,8 @@
   {:index       i
    :value       -1
    :count       n
-   :vary-vector (for [v (range (inc i) (:n-var data))]
-                  (make-vary parent-i v start n data))})
+   :vary-vector (doall (for [v (range (inc i) (:n-var data))]
+                  (make-vary parent-i v start n data)))})
 
 (defn make [data]
   "Make ADTree (alternating decision tree) based on `data`."
