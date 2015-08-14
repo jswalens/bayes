@@ -33,6 +33,14 @@
   "Set value of query at `index` in `queries` to `value`."
   (assoc-in queries [index :value] value))
 
+; FIXME: set-query-value below should not only change them in queries, but also
+; in query-vector and parent-query-vector, I think
+;
+; In other words, query-vector and parent-query-vector aren't copies of a subset
+; of queries, but they point to these queries.
+; A possible solution would be to store only the indices of the queries in
+; query-vector and parent-vector, and look up their values using queries.
+
 (defn- compute-specific-local-log-likelihood [adtree query-vector parent-query-vector]
   (let [count (adtree/get-count adtree query-vector)]
     (if (= count 0)
