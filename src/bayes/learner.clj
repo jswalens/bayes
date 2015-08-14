@@ -16,13 +16,19 @@
    :task-list                  (list) ; TODO: sorted by compareTask
    :n-total-parent             0})
 
+(defn- populate-parent-query-vector [net id queries]
+  (map #(nth queries %) (net/get-parent-id-list net id)))
+
 (defn- populate-query-vectors [net id queries]
-  "TODO"
-  [[] []])
+  (let [parent-query-vector (populate-parent-query-vector net id queries)
+        query-vector (conj parent-query-vector (nth queries id))
+        ; TODO: sort query-vector by compareQuery
+        ]
+    [query-vector parent-query-vector]))
 
 (defn- compute-local-log-likelihood [id adtree queries query-vector parent-query-vector]
   "TODO"
-  [0.0 []])
+  [0.0 queries])
 
 (defn- sum [ns]
   "Sums `ns`."
