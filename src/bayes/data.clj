@@ -133,9 +133,15 @@
         (compare-record a b (inc offset)))
       c)))
 
-(defn sort [data offset]
-  "Sort records in `data`, based on values in column `offset` and afterwards."
+(defn sort-records [data offset]
+  "Sort records in `data`, based on values in column `offset` and afterwards.
+  Returns sorted records."
   (clojure.core/sort compare-record (:records data)))
+
+(defn sort [data offset]
+  "Sort records in `data`, based on values in column `offset` and afterwards.
+  Returns updated data."
+  (assoc data :records (sort-records data offset)))
 
 (defn find-split [data start offset]
   "We look at the column `offset` in each record in `data`. The first `x` should
