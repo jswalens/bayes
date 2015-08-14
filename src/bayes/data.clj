@@ -133,25 +133,34 @@
         (compare-record a b (inc offset)))
       c)))
 
-(defn sort-records [data offset]
-  "Sort records in `data`, based on values in column `offset` and afterwards.
-  Returns sorted records."
-  (clojure.core/sort #(compare-record %1 %2 offset) (:records data)))
+(defn- sort-records [data start n offset]
+  "Sort records with id `start` to `start + n` in `data`, based on values in
+  their columns at index `offset` and later. Returns sorted records (embedded
+  in all records)."
+  (let [records (:records data)
+        p1 (take start records)          ; 0 -> start-1
+        p2 (take n (drop start records)) ; start -> start+n-1
+        p3 (drop (+ start n) records)]   ; start+n -> end
+    (concat
+      p1
+      (clojure.core/sort #(compare-record %1 %2 offset) p2)
+      p3)))
 
-(defn sort [data offset]
-  "Sort records in `data`, based on values in column `offset` and afterwards.
-  Returns updated data."
-  (assoc data :records (sort-records data offset)))
+(defn sort [data start n offset]
+  "Sort records with id `start` to `start + n` in `data`, based on values in
+  their columns at index `offset` and later. Returns updated data."
+  (assoc data :records (sort-records data start n offset)))
 
-(defn find-split [data start offset]
-  "We look at the column `offset` in each record in `data`. The first `x` should
-  be 0, the next `n - x` should be 1. [*] This returns `x`.
+(defn find-split [data start n offset]
+  "We take the records with id `start` to `start + n` from `data`. Then, we take
+  their column at index `offset`. The first `x` of these values should be 0,
+  the next `n - x` should be 1. [*] This function returns that `x`.
 
   [*] To satisfy this condition, run data/sort on the data first.
 
   This function uses binary search."
   (loop [low  start
-         high (+ start (:n-record data) -1)]
+         high (+ start n -1)]
     (if (> low high)
       (- low start)
       (let [mid (int (/ (+ low high) 2))]

@@ -6,10 +6,10 @@
 
 (defn- make-vary [parent-i i start n data]
   (let [data (if (and (not= (inc parent-i) i) (> n 1))
-                (data/sort data i) ; not passing start or n: is this ok?
+                (data/sort data start n i)
                 data)
-        n-0  (data/find-split data start i) ; number of 0s
-        n-1  (- n n-0)                      ; number of 1s
+        n-0  (data/find-split data start n i) ; number of 0s
+        n-1  (- n n-0)                        ; number of 1s
         most-common-value (if (>= n-0 n-1) 0 1)]
     {:index             i
      :most-common-value most-common-value
@@ -35,4 +35,5 @@
   "Make ADTree (alternating decision tree) based on `data`."
   {:n-var     (:n-var data)
    :n-record  (:n-record data)
-   :root-node (make-node -1 -1 0 (:n-record data) (data/sort data 0))})
+   :root-node (make-node -1 -1 0 (:n-record data)
+                (data/sort data 0 (:n-record data) 0))})
