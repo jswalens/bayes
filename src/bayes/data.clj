@@ -8,7 +8,8 @@
 (defn alloc [n-var n-record]
   "Allocate data structure.
 
-  In C++, this allocates :records to the right length, in Clojure we don't care."
+  In the C version, this allocates :records to the right length, in Clojure
+  we don't care."
   {:n-var    n-var
    :n-record n-record
    ; records is a list mapping each record id to a record, which is a list of 0s
@@ -46,14 +47,14 @@
 (defn generate [data max-num-parent percent-parent]
   "Generate data, returns `{:data data :net net}`.
 
-  As opposed to C++ version, this doesn't take a seed."
+  As opposed to the C version, this doesn't take a seed."
   (let [; Generate random Bayesian network
         net
           (net/generate-random-edges
             (net/alloc (:n-var data)) max-num-parent percent-parent)
         ; Create a threshold for each of the possible permutations of variable
         ; value instances
-        ; In the C++ version, this is a 2D array variable -> bitmap -> (random)
+        ; In the C version, this is a 2D array variable -> bitmap -> (random)
         ; int. The bitmap has length = the variable's number of parents. All
         ; permutations of the bitmap are iterated through. So, given a variable
         ; and an on/off state for each of its parents, this returns an integer.
