@@ -15,6 +15,18 @@
    ; and 1s of length n-var (see generate)
    :records  []})
 
+(defn- get-record [data id]
+  "Get record with index `id` from `data`."
+  (nth (:records data) id))
+
+(defn- get-var [record offset]
+  "Get column `offset` in `record`.."
+  (nth record offset))
+
+(defn- get-record-var [data id offset]
+  "Get column `offset` in record with index `id` from `data`."
+  (get-var (get-record data id) offset))
+
 (defn- bits->bitmap [bits]
   "Convert a list of 0 and 1 to a bitmap, i.e. an int where each bit is set
   correspondingly.
@@ -95,7 +107,7 @@
                         (for [p (net/get-parent-id-list net id)]
                           ; ordering ensures that p < o (see [1]), so record
                           ; will have an index p at iteration o of the reduce
-                          (nth record p))
+                          (get-var record p))
                       bitmap
                         (bits->bitmap values)
                       threshold
@@ -114,7 +126,7 @@
   "Compare records `a` and `b` by a lexicographic order on its columns starting
   at `offset`.
   Assumes `a` and `b` are the same size."
-  (let [c (compare (nth a offset) (nth b offset))]
+  (let [c (compare (get-var a offset) (get-var b offset))]
     (if (= c 0)
       (if (>= (inc offset) (count a))
         0
