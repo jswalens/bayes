@@ -8,7 +8,7 @@
   (let [data (if (and (not= (inc parent-i) i) (> n-record 1))
                 (data/sort data start n-record i)
                 data)
-        num0 (data/find-split data start n-record i)
+        num0 (data/find-split data start i)
         num1 (- n-record num0)
         most-common-value (if (>= num0 num1) 0 1)]
     {:index             i
