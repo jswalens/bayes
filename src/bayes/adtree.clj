@@ -56,14 +56,16 @@
       0
     (>= (:index node) last-query-index)
       (:count node)
-    (>= q (count query-vector))
+    (>= q (count query-vector)) ; (nth query-vector q) will fail
       (:count node)
     :else
-      (let [query-index
-              (nth query-vector q)
-            {query-value :value}
-              (nth queries query-index)
-            vary (nth (:vary-vector node) (- query-index (:index node) 1))]
+      (let [; q is index in query-vector
+            ; query-index = query-vector[q] = the index of the query in queries
+            ; queries[query-index] = the query
+            query-index          (nth query-vector q)
+            {query-value :value} (nth queries query-index)
+            vary-index           (- query-index (:index node) 1)
+            vary                 (nth (:vary-vector node) vary-index)]
         (condp = query-value
           (:most-common-value vary)
             (let [super-query-vector
@@ -75,8 +77,14 @@
                   invert-count
                     ; this call will end up in one of the two cases below
                     (get-count-helper node q inverted-queries query-vector
-                      last-query-index adtree)]
-              (- super-count invert-count))
+                      last-query-index adtree)
+                  diff
+                    (- super-count invert-count)]
+              (if (<= diff 0)
+                (do
+                  (println "error: super count <= invert count, circumventing")
+                  1)
+                diff))
           0
             (get-count-helper (:zero-node vary) (inc q) queries query-vector
               last-query-index adtree)
@@ -88,9 +96,6 @@
 
 (defn get-count [adtree queries query-vector]
   "TODO"
-  (let [last-query-index
-          (if (empty? query-vector)
-            -1
-            (last query-vector))]
+  (let [last-query-index (or (last query-vector) -1)]
     (get-count-helper (:root-node adtree) 0 queries query-vector
       last-query-index adtree)))

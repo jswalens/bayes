@@ -54,9 +54,9 @@
   (let [count (adtree/get-count adtree queries query-vector)]
     (if (= count 0)
       0.0
-      (let [probability (/ (double count) (double (:n-record adtree)))
+      (let [probability  (/ (double count) (double (:n-record adtree)))
             parent-count (adtree/get-count adtree queries parent-query-vector)]
-        (* probability (Math/log (/ (double count) (double parent-count))))))))
+        (* probability (double (Math/log (/ (double count) (double parent-count)))))))))
 
 (defn- compute-local-log-likelihood-helper [i adtree queries query-vector parent-query-vector]
   (if (>= i (count parent-query-vector))
