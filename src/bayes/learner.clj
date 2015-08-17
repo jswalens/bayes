@@ -17,41 +17,47 @@
    :task-list                  (list) ; TODO: sorted by compareTask
    :n-total-parent             0})
 
+; queries are a vector of maps {:index ... :value ...}, e.g:
+; [{:index 0 :value -1} {:index 1 :value 1} {:index 2 :value 0} ...]
+; where :index of query i is always i (I think XXX), and value is either 0, 1,
+; or QUERY_VALUE_WILDCARD (-1).
+; This corresponds to the queries of the C version, which is an array of
+; structs.
+
 (defn- sort-queries [queries]
   "Sort a list of queries by their index."
   (sort-by :index queries))
-
-(defn- populate-parent-query-vector [net id queries]
-  (map #(nth queries %) (net/get-parent-id-list net id)))
-
-(defn- populate-query-vectors [net id queries]
-  (let [parent-query-vector (populate-parent-query-vector net id queries)
-        query-vector (sort-queries (conj parent-query-vector (nth queries id)))]
-    [query-vector parent-query-vector]))
 
 (defn- set-query-value [queries index value]
   "Set value of query at `index` in `queries` to `value`."
   (assoc-in queries [index :value] value))
 
-; FIXME: set-query-value below should not only change them in queries, but also
-; in query-vector and parent-query-vector, I think
-;
-; In other words, query-vector and parent-query-vector aren't copies of a subset
-; of queries, but they point to these queries.
-; A possible solution would be to store only the indices of the queries in
-; query-vector and parent-vector, and look up their values using queries.
+; In the C version, a query-vector or a parent-query-vector is a vector of
+; pointers to a query. Therefore, changing a query's value is reflected in all
+; (parent-)query-vectors in which it is included.
+; In the Clojure version, a (parent-)query-vector is a list of indices. This
+; means that whenever we want to retrieve a query from a (parent-)query-vector,
+; we have an extra bit of indirection.
 
-(defn- compute-specific-local-log-likelihood [adtree query-vector parent-query-vector]
-  (let [count (adtree/get-count adtree query-vector)]
+(defn- populate-parent-query-vector [net id queries]
+  (net/get-parent-id-list net id))
+
+(defn- populate-query-vectors [net id queries]
+  (let [parent-query-vector (populate-parent-query-vector net id queries)
+        query-vector        (sort-queries (conj parent-query-vector id))]
+    [query-vector parent-query-vector]))
+
+(defn- compute-specific-local-log-likelihood [adtree queries query-vector parent-query-vector]
+  (let [count (adtree/get-count adtree queries query-vector)]
     (if (= count 0)
       0.0
       (let [probability (/ (double count) (double (:n-record adtree)))
-            parent-count (adtree/get-count adtree parent-query-vector)]
+            parent-count (adtree/get-count adtree queries parent-query-vector)]
         (* probability (Math/log (/ (double count) (double parent-count))))))))
 
 (defn- compute-local-log-likelihood-helper [i adtree queries query-vector parent-query-vector]
   (if (>= i (count parent-query-vector))
-    (compute-specific-local-log-likelihood adtree query-vector parent-query-vector)
+    (compute-specific-local-log-likelihood adtree queries query-vector parent-query-vector)
     (+
       (compute-local-log-likelihood-helper (inc i) adtree
         (set-query-value queries (:index (nth parent-query-vector i)) 0)

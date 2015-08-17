@@ -50,7 +50,7 @@
 
 (declare get-count)
 
-(defn- get-count-helper [node q query-vector last-query-index adtree]
+(defn- get-count-helper [node q queries query-vector last-query-index adtree]
   (cond
     (nil? node)
       0
@@ -59,8 +59,10 @@
     (>= q (count query-vector))
       (:count node)
     :else
-      (let [{query-index :index query-value :value}
+      (let [query-index
               (nth query-vector q)
+            {query-value :value}
+              (nth queries query-index)
             vary (nth (:vary-vector node) (- query-index (:index node) 1))]
         (condp = query-value
           (:most-common-value vary)
@@ -68,25 +70,25 @@
                     (drop-one q query-vector)
                   super-count
                     (get-count adtree super-query-vector)
-                  inverted-query-vector
-                    (update-in query-vector [q :value] swap-bit)
+                  inverted-queries
+                    (update-in queries [q :value] swap-bit)
                   invert-count
-                    (get-count-helper node q inverted-query-vector last-query-index adtree)]
+                    (get-count-helper node q inverted-queries query-vector last-query-index adtree)]
               (- super-count invert-count))
           0
-            (get-count-helper (:zero-node vary) (inc q) query-vector
+            (get-count-helper (:zero-node vary) (inc q) queries query-vector
               last-query-index adtree)
           1
-            (get-count-helper (:one-node vary) (inc q) query-vector
+            (get-count-helper (:one-node vary) (inc q) queries query-vector
               last-query-index adtree)
           ; QUERY_VALUE_WILDCARD
             (throw (Exception. (str "unrecognized query value " query-value)))))))
 
-(defn get-count [adtree query-vector]
+(defn get-count [adtree queries query-vector]
   "TODO"
   (let [last-query-index
           (if (empty? query-vector)
             -1
             (:index (last query-vector)))]
-    (get-count-helper (:root-node adtree) 0 query-vector last-query-index
+    (get-count-helper (:root-node adtree) 0 queries query-vector last-query-index
       adtree)))
