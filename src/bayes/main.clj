@@ -43,6 +43,18 @@ Options:                                         (defaults)
   ; TODO: actually parse arguments
   default-params)
 
+(defn- set-rand-seed [seed]
+  "Set random seed, by setting seed of random number generator used by
+  java.lang.Math. Very hacky and dependent on the JVM version."
+  (let [; JDK 7?
+        ;field (.getDeclaredField Math "randomNumberGenerator")
+        ; JDK 8
+        rnghc (Class/forName "java.lang.Math$RandomNumberGeneratorHolder")
+        field (.getDeclaredField rnghc "randomNumberGenerator")
+        _     (.setAccessible field true) ; circumvent private
+        rng   (.get field nil)]
+    (.setSeed rng seed)))
+
 (defn score [net adtree]
   "Score `net`."
   (let [data    (data/alloc 1 1)
@@ -63,6 +75,7 @@ Options:                                         (defaults)
     (println "Operation quality factor   =" (:quality params))
     ; Generate data
     (println "Generating data...")
+    (set-rand-seed (:seed params))
     (let [{data :data net :net}
             (data/generate
               (data/alloc (:var params) (:record params))
