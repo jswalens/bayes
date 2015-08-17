@@ -46,6 +46,9 @@ Options:                                         (defaults)
 (defn- set-rand-seed [seed]
   "Set random seed, by setting seed of random number generator used by
   java.lang.Math. Very hacky and dependent on the JVM version."
+  ; TODO: instead of this hacky thing, simply redefine clojure.core's rand to
+  ; my own version which uses a new (global) java.util.Random() and allow the
+  ; seed of that to be set.
   (let [; JDK 7?
         ;field (.getDeclaredField Math "randomNumberGenerator")
         ; JDK 8
