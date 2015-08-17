@@ -23,6 +23,9 @@
 ; or QUERY_VALUE_WILDCARD (-1).
 ; This corresponds to the queries of the C version, which is an array of
 ; structs.
+;
+; TODO: is it still necessary to keep the index in the query for the Clojure
+; version?
 
 (defn- sort-queries [queries]
   "Sort a list of queries by their index."
