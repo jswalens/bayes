@@ -69,11 +69,13 @@
             (let [super-query-vector
                     (drop-one q query-vector)
                   super-count
-                    (get-count adtree super-query-vector)
+                    (get-count adtree queries super-query-vector)
                   inverted-queries
-                    (update-in queries [q :value] swap-bit)
+                    (update-in queries [query-index :value] swap-bit)
                   invert-count
-                    (get-count-helper node q inverted-queries query-vector last-query-index adtree)]
+                    ; this call will end up in one of the two cases below
+                    (get-count-helper node q inverted-queries query-vector
+                      last-query-index adtree)]
               (- super-count invert-count))
           0
             (get-count-helper (:zero-node vary) (inc q) queries query-vector
@@ -90,5 +92,5 @@
           (if (empty? query-vector)
             -1
             (last query-vector))]
-    (get-count-helper (:root-node adtree) 0 queries query-vector last-query-index
-      adtree)))
+    (get-count-helper (:root-node adtree) 0 queries query-vector
+      last-query-index adtree)))
