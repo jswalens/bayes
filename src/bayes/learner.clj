@@ -63,10 +63,10 @@
     (compute-specific-local-log-likelihood adtree queries query-vector parent-query-vector)
     (+
       (compute-local-log-likelihood-helper (inc i) adtree
-        (set-query-value queries (:index (nth parent-query-vector i)) 0)
+        (set-query-value queries (nth parent-query-vector i) 0)
         query-vector parent-query-vector)
       (compute-local-log-likelihood-helper (inc i) adtree
-        (set-query-value queries (:index (nth parent-query-vector i)) 1)
+        (set-query-value queries (nth parent-query-vector i) 1)
         query-vector parent-query-vector))))
 
 (defn- compute-local-log-likelihood [id adtree queries query-vector parent-query-vector]

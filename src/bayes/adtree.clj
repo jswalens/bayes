@@ -89,6 +89,6 @@
   (let [last-query-index
           (if (empty? query-vector)
             -1
-            (:index (last query-vector)))]
+            (last query-vector))]
     (get-count-helper (:root-node adtree) 0 queries query-vector last-query-index
       adtree)))
