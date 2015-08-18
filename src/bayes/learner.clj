@@ -220,7 +220,7 @@
                         (nth local-base-log-likelihoods v_i)))
                     vars))]
           ; TODO: maybe doall to force execution before tx?
-      (println "say what" tasks)
+      (println "tasks created by thread" i ":" tasks)
       (dosync
         ; TODO: ordering of tasks
         (alter (:tasks learner) concat tasks)))))
