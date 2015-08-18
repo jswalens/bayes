@@ -118,15 +118,15 @@
           (+ penalty (* n-record log-likelihood))]
     score))
 
-(defn- create-partition [min max i n]
-  "Given a range from `min` to `max`, returns the subrange for chunk `i` out of
-  `n` total chunks."
-  (let [range (- max min)                     ; total range
-        chunk (max 1 (/ (+ range (/ n 2)) n)) ; size of 1 chunk; integer math
-        start (+ min (* chunk i))             ; start of this chunk
-        stop  (if (= i (dec n))               ; end of this chunk
-                max
-                (min max (+ start chunk)))]
+(defn- create-partition [minimum maximum i n]
+  "Given a range from `minimum` to `maximum`, returns the subrange for chunk `i`
+  out of `n` total chunks."
+  (let [size  (- maximum minimum)            ; total range
+        chunk (max 1 (/ (+ size (/ n 2)) n)) ; size of 1 chunk; integer math
+        start (+ minimum (* chunk i))        ; start of this chunk
+        stop  (if (= i (dec n))              ; end of this chunk
+                maximum
+                (min maximum (+ start chunk)))]
     (range start stop)))
 
 (defn- compute-local-base-log-likelihoods [vars adtree]
