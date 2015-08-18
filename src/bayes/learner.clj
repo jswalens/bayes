@@ -7,14 +7,19 @@
 (defn alloc [data adtree n-thread]
   "Allocate the learner.
 
+  We have an extra parameter :n-thread to contain the number of threads to use.
+
+  The C version has tasks, an array containing tasks, and taskList, an ordered
+  list of pointers to tasks (ordered by compareTask). We only have tasks, as an
+  ordered list of tasks.
+
   In the C version, parts of this struct are aligned to cache lines. We don't
   care about that here."
   {:adtree                     adtree
    :net                        (net/alloc (:n-var data))
    :local-base-log-likelihoods [] ; will contain (:n-var data) floats
    :base-log-likelihood        (ref 0.0)
-   :tasks                      [] ; will contain (:n-var data) learner tasks
-   :task-list                  (list) ; TODO: sorted by compareTask
+   :tasks                      (ref []) ; TODO: sorted by compareTask
    :n-total-parent             0
    :n-thread                   n-thread})
 
@@ -132,10 +137,57 @@
       (compute-specific-local-log-likelihood adtree [{:index v :value 1}]
         [0] []))))
 
-(defn- create-task-list [learner i n]
+(defn- create-task [v adtree base-log-likelihood this-local-log-likelihood]
+  "Create task for variable `v`."
+  (let [; A. Find best local index
+        ; A.1 find local-log-likelihood for every variable except v
+        other-local-log-likelihoods
+          (for [vv (range (:n-var adtree))
+                :when (not= vv v)]
+            (let [initial-queries
+                    [{:index vv :value nil}
+                     {:index vv :value nil}
+                     {:index vv :value nil}]
+                  queries
+                    (assoc initial-queries (if (< v vv) 0 1) vv)
+                  query-vector        [0 1]
+                  parent-query-vector [2]
+                  other-local-log-likelihood
+                    (+
+                      (compute-specific-local-log-likelihood adtree
+                        (assoc queries 0 0 1 0 2 0)
+                        query-vector parent-query-vector)
+                      (compute-specific-local-log-likelihood adtree
+                        (assoc queries 0 0 1 1 2 (if (< vv v) 0 1))
+                        query-vector parent-query-vector)
+                      (compute-specific-local-log-likelihood adtree
+                        (assoc queries 0 1 1 0 2 (if (< vv v) 1 0))
+                        query-vector parent-query-vector)
+                      (compute-specific-local-log-likelihood adtree
+                        (assoc queries 1 1 1 1 2 1)
+                        query-vector parent-query-vector))]
+              {:index vv :value other-local-log-likelihood}))
+        ; A.2 Sort them and take last (highest)
+        best-local
+          (last (sort-by :value other-local-log-likelihoods))]
+    (if (> (:local-log-likelihood best-local) this-local-log-likelihood)
+      (let [penalty        (* -0.5 (Math/log (double (:n-record adtree))))
+            log-likelihood (* (:n-record adtree)
+                             (+ base-log-likelihood
+                               (:value best-local)
+                               (- this-local-log-likelihood)))
+            score          (+ penalty log-likelihood)]
+        {:op      :insert
+         :from-id (:index best-local)
+         :to-id   v
+         :score   score})
+      nil)))
+
+(defn- create-tasks [learner i n]
+  "Create tasks and add them to learner. This is thread `i` of `n`."
   (let [adtree   (:adtree learner)
-        n-var    (:n-var adtree)
-        n-record (:n-record adtree)
+        n-var    (:n-var adtree) ; XXX
+        n-record (:n-record adtree) ; XXX
         ; The C version has queries = [X, Y], queryVector = [&X] or [&X, &Y];
         ; parentQuery = Z, and parentQueryVector = [&Z].
         ; In Clojure, we have queries = [X], [X, Y], or [X, Y, Z];
@@ -145,10 +197,15 @@
         local-base-log-likelihoods (compute-local-base-log-likelihoods vars adtree)
         base-log-likelihood        (sum local-base-log-likelihoods)]
     (dosync
-      (alter (:base-log-likelihood learner) + base-log-likelihood))))
+      (alter (:base-log-likelihood learner) + base-log-likelihood))
+    (let [tasks (filter some? (for [v vars] (create-task v adtree base-log-likelihood (nth local-base-log-likelihoods v))))]
+                ; TODO: maybe doall to force execution before tx?
+      (dosync
+        ; TODO: ordering of tasks
+        (alter (:tasks learner) concat tasks)))))
 
 (defn run [learner]
   "TODO"
   (let [_ (for [i (:n-thread learner)]
-            (future (create-task-list learner i (:n-thread learner))))]
+            (future (create-tasks learner i (:n-thread learner))))]
     learner))
