@@ -191,7 +191,7 @@
         ; A.2 Sort them and take last (highest)
         best-local
           (last (sort-by :value other-local-log-likelihoods))]
-    (if (> (:local-log-likelihood best-local) this-local-log-likelihood)
+    (if (> (:value best-local) this-local-log-likelihood)
       (let [penalty        (* -0.5 (Math/log (double (:n-record adtree))))
             log-likelihood (* (:n-record adtree)
                              (+ base-log-likelihood
