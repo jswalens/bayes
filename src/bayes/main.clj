@@ -61,7 +61,7 @@ Options:                                         (defaults)
 (defn score [net adtree]
   "Score `net`."
   (let [data    (data/alloc 1 1)
-        learner (assoc (learner/alloc data adtree) :net net)]
+        learner (assoc (learner/alloc data adtree 1) :net net)]
     (learner/score learner)))
 
 (defn -main [& args]
@@ -97,7 +97,7 @@ Options:                                         (defaults)
           ; Learn structure of Bayesian network
           _ (println "Learning structure...")
           learner
-            (time (learner/run (learner-alloc data adtree)))
+            (time (learner/run (learner/alloc data adtree (:thread params))))
           _ (println "done.")
           ; Check solution
           ;status
