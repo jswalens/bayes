@@ -202,11 +202,11 @@
     (dosync
       (alter (:base-log-likelihood learner) + base-log-likelihood))
     (let [tasks (filter some?
-                  (map
-                    (fn [v]
+                  (map-indexed
+                    (fn [v_i v]
                       (create-task v adtree base-log-likelihood
-                        (nth local-base-log-likelihoods v)))
-                    (range vars)))]
+                        (nth local-base-log-likelihoods v_i)))
+                    vars))]
           ; TODO: maybe doall to force execution before tx?
       (println "say what" tasks)
       (dosync
