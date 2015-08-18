@@ -158,22 +158,34 @@
                      {:index vv :value nil}
                      {:index vv :value nil}]
                   queries
-                    (assoc initial-queries (if (< v vv) 0 1) vv)
+                    (assoc-in initial-queries [(if (< v vv) 0 1) :index] vv)
                   query-vector        [0 1]
                   parent-query-vector [2]
                   other-local-log-likelihood
                     (+
                       (compute-specific-local-log-likelihood adtree
-                        (assoc queries 0 0 1 0 2 0)
+                        (-> queries
+                          (assoc-in [0 :value] 0)
+                          (assoc-in [1 :value] 0)
+                          (assoc-in [2 :value] 0))
                         query-vector parent-query-vector)
                       (compute-specific-local-log-likelihood adtree
-                        (assoc queries 0 0 1 1 2 (if (< vv v) 0 1))
+                        (-> queries
+                          (assoc-in [0 :value] 0)
+                          (assoc-in [1 :value] 1)
+                          (assoc-in [2 :value] (if (< vv v) 0 1)))
                         query-vector parent-query-vector)
                       (compute-specific-local-log-likelihood adtree
-                        (assoc queries 0 1 1 0 2 (if (< vv v) 1 0))
+                        (-> queries
+                          (assoc-in [0 :value] 1)
+                          (assoc-in [1 :value] 0)
+                          (assoc-in [2 :value] (if (< vv v) 1 0)))
                         query-vector parent-query-vector)
                       (compute-specific-local-log-likelihood adtree
-                        (assoc queries 1 1 1 1 2 1)
+                        (-> queries
+                          (assoc-in [0 :value] 1)
+                          (assoc-in [1 :value] 1)
+                          (assoc-in [2 :value] 1))
                         query-vector parent-query-vector))]
               {:index vv :value other-local-log-likelihood}))
         ; A.2 Sort them and take last (highest)
