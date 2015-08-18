@@ -93,11 +93,21 @@ Options:                                         (defaults)
           ; Score original network
           actual-score
             (score net adtree)
-          _ (println "actual score:" actual-score)]
-      ; Learn structure of Bayesian network
-      ; TODO
-      ; Check solution
-      ; TODO
+          _ (println "actual score:" actual-score)
+          ; Learn structure of Bayesian network
+          _ (println "Learning structure...")
+          learner
+            (time (learner/run (learner-alloc data adtree)))
+          _ (println "done.")
+          ; Check solution
+          ;status
+          ;  (net/is-cycle? (:net learner))
+          ;_ (when-not status (println "ERROR: solution is incorrect"))
+          ;learn-score
+          ;  (learner/score learner)
+          ;_ (println "Learn score  =" learn-score)
+          ;_ (println "Actual score =" actual-score)
+          ]
       ; Clean up
       (shutdown-agents))))
 
