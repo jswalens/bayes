@@ -215,7 +215,7 @@
 
 (defn run [learner]
   "TODO"
-  (let [a (for [i (:n-thread learner)]
+  (let [a (for [i (range (:n-thread learner))]
             (future (create-tasks learner i (:n-thread learner))))
         _ (doall (map deref a))]
     learner))
