@@ -19,9 +19,29 @@
    :net                        (net/alloc (:n-var data))
    :local-base-log-likelihoods (ref []) ; will contain (:n-var data) floats
    :base-log-likelihood        (ref 0.0)
-   :tasks                      (ref (list)) ; TODO: sorted by compareTask
+   :tasks                      (ref []) ; sorted by compareTask
    :n-total-parent             (ref 0)
    :n-thread                   n-thread})
+
+(defn- add-task [tasks task]
+  "Add `task` to `tasks`, ordered by score."
+  (dosync
+    (ref-set tasks (vec (sort-by :score (conj @tasks task))))))
+
+(defn- add-tasks [tasks new-tasks]
+  "Add `new-tasks` to `tasks`, ordered by score."
+  (dosync
+    (ref-set tasks (vec (sort-by :score (concat @tasks new-tasks))))))
+
+(defn- pop-task [tasks]
+  "Returns first element of `tasks`, and pops that element from `tasks`. Returns
+  nil if tasks is empty."
+  (dosync
+    (if (empty? @tasks)
+      nil
+      (let [v (peek @tasks)]
+        (alter tasks pop)
+        v))))
 
 ; queries are a vector of maps {:index ... :value ...}, e.g:
 ; [{:index 0 :value -1} {:index 1 :value 1} {:index 2 :value 0} ...]
@@ -221,19 +241,7 @@
                     vars))]
           ; TODO: maybe doall to force execution before tx?
       (println "tasks created by thread" i ":" tasks)
-      (dosync
-        ; TODO: ordering of tasks
-        (alter (:tasks learner) concat tasks)))))
-
-(defn- pop-task [tasks]
-  "Returns first element of `tasks`, and pops that element from `tasks`. Returns
-  nil if tasks is empty."
-  (if (empty? @tasks)
-    nil
-    (do
-      (let [v (peek @tasks)]
-        (alter tasks pop)
-        v))))
+      (add-tasks (:tasks learner) tasks))))
 
 (defn- is-task-valid? [task net]
   (let [from (:from-id task)
@@ -281,7 +289,7 @@
 
 (defn- learn-structure [learner i n]
   (loop []
-    (let [task (dosync (pop-task (:tasks learner)))]
+    (let [task (pop-task (:tasks learner))]
       (when (not (nil? task))
         (let [valid?
                 (atom false)
@@ -320,9 +328,8 @@
                   {:op :num :to-id -1 :from-id -1 :score base-score})]
           (when (not= (:to-id best-task) -1)
             (println "new task on thread" i ":" best-task)
-            (dosync
-              (alter (:tasks learner) conj best-task))))
-      (recur)))))
+            (add-task (:tasks learner) best-task)))
+        (recur)))))
 
 (defn run [learner]
   "TODO"
