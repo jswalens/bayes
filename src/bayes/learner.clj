@@ -324,8 +324,8 @@
 
 (defn run [learner]
   "TODO"
-  (dotimes [i (range (:n-thread learner))]
+  (dotimes [i (:n-thread learner)]
     (future (create-tasks learner i (:n-thread learner))))
-  (dotimes [i (range (:n-thread learner))]
+  (dotimes [i (:n-thread learner)]
     (future (learn-structure learner i (:n-thread learner))))
   learner)
