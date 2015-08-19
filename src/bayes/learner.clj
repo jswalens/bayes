@@ -17,10 +17,10 @@
   care about that here."
   {:adtree                     adtree
    :net                        (net/alloc (:n-var data))
-   :local-base-log-likelihoods [] ; will contain (:n-var data) floats
+   :local-base-log-likelihoods (ref []) ; will contain (:n-var data) floats
    :base-log-likelihood        (ref 0.0)
-   :tasks                      (ref []) ; TODO: sorted by compareTask
-   :n-total-parent             0
+   :tasks                      (ref (list)) ; TODO: sorted by compareTask
+   :n-total-parent             (ref 0)
    :n-thread                   n-thread})
 
 ; queries are a vector of maps {:index ... :value ...}, e.g:
@@ -225,9 +225,107 @@
         ; TODO: ordering of tasks
         (alter (:tasks learner) concat tasks)))))
 
+(defn- pop-task [tasks]
+  "Returns first element of `tasks`, and pops that element from `tasks`. Returns
+  nil if tasks is empty."
+  (if (empty? @tasks)
+    nil
+    (do
+      (let [v (peek @tasks)]
+        (alter tasks pop)
+        v))))
+
+(defn- is-task-valid? [task net]
+  (let [from (:from-id task)
+        to   (:to-id task)]
+    (case (:op task)
+      :insert  (not (or (net/has-edge? net from to)
+                        (net/is-path?  net to from)))
+      :remove  true ; can never create cycle, so always valid
+      :reverse (not (net/is-path?
+                      (net/apply-operation net :remove from to)
+                      ; temporarily remove edge for check
+                      from to))
+      (println "error: unknown task operation type" (:op task)))))
+
+(defn- calculate-delta-log-likelihood [task learner]
+  "Returns delta-log-likelihood, and sets the local-base-log-likelihoods and
+  n-total-parent of the learner."
+  (let [net    (:net learner)
+        adtree (:adtree learner)
+        to     (:to-id task)
+        local-base-log-likelihoods (:local-base-log-likelihoods learner)]
+    (case (:op task)
+      :insert
+        (let [queries (for [v (range (:n-var adtree))]
+                        {:index v :value QUERY_VALUE_WILDCARD})]
+          (dosync
+            (let [[query-vector parent-query-vector]
+                    (populate-query-vectors net to queries)
+                  new-base-log-likelihood
+                    (compute-local-log-likelihood to adtree net
+                      queries query-vector parent-query-vector)
+                  to-local-base-log-likelihood
+                    (nth @local-base-log-likelihoods to)
+                  delta-log-likelihood
+                    (- to-local-base-log-likelihood new-base-log-likelihood)]
+              (alter local-base-log-likelihoods assoc to new-base-log-likelihood)
+              ; The following happens in a separate tx in the C version
+              (commute (:n-total-parent learner) inc)
+              delta-log-likelihood)))
+      (println "error: unknown task operation type" (:op task)))))
+
+(defn- find-best-insert-task [arg]
+  "TODO"
+  nil)
+
+(defn- learn-structure [learner i n]
+  (loop []
+    (let [task (dosync (pop-task (:tasks learner)))]
+      (when (not (nil? task))
+        (let [valid?
+                (atom false)
+              updated-net
+                (dosync ; TODO: why is this in a transaction? -> nodes in net should be refs, or contain refs
+                  ; Check if task is still valid
+                  (swap! valid? (is-task-valid? task (:net learner)))
+                  (if @valid?
+                    ; Perform task: update graph and probabilities
+                    (net/apply-operation (:net learner) (:op task) (:from-id task) (:to-id task))))
+              delta-log-likelihood
+                (if @valid?
+                  (calculate-delta-log-likelihood task learner)
+                  0.0)
+              ; Update/read globals
+              [base-log-likelihood n-total-parent]
+                (dosync
+                  [(alter (:base-log-likelihood learner) + delta-log-likelihood)
+                   @(:n-total-parent learner)])
+              ; Find next task
+              n-record (:n-record (:adtree learner))
+              base-penalty (* -0.5 (Math/log (double n-record)))
+              base-score (+ (* n-total-parent base-penalty)
+                            (* n-record base-log-likelihood))
+              arg {:to-id (:to-id task)
+                   :n-total-parent n-total-parent
+                   :base-penalty base-penalty
+                   :base-log-likelihood base-log-likelihood}
+              new-task (dosync (find-best-insert-task arg))
+              global_operation-quality-factor 1.0 ; XXX get from somewhere
+              best-task
+                (if (and (not= (:from-id new-task) (:to-id new-task))
+                         (> (:score new-task) (/ base-score global_operation-quality-factor)))
+                  new-task
+                  {:op :num :to-id -1 :from-id -1 :score base-score})]
+          (when (not= (:to-id best-task) -1)
+            (dosync
+              (alter (:tasks learner) conj best-task))))
+      (recur)))))
+
 (defn run [learner]
   "TODO"
-  (let [a (for [i (range (:n-thread learner))]
-            (future (create-tasks learner i (:n-thread learner))))
-        _ (doall (map deref a))]
-    learner))
+  (dotimes [i (range (:n-thread learner))]
+    (future (create-tasks learner i (:n-thread learner))))
+  (dotimes [i (range (:n-thread learner))]
+    (future (learn-structure learner i (:n-thread learner))))
+  learner)

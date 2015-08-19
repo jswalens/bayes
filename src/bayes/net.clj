@@ -23,6 +23,10 @@
 (defn get-child-id-list [net id]
   (:child-id-list (nth net id)))
 
+(defn apply-operation [net op from-id to-id]
+  "TODO"
+  net)
+
 (defn has-edge? [net from-id to-id]
   "Does `net` have an edge between the nodes with ids `from-id` and `to-id`?"
   (.contains (get-parent-id-list net to-id) from-id))
