@@ -265,8 +265,8 @@
         local-base-log-likelihoods (:local-base-log-likelihoods learner)]
     (case (:op task)
       :insert
-        (let [queries (for [v (range (:n-var adtree))]
-                        {:index v :value QUERY_VALUE_WILDCARD})]
+        (let [queries (vec (for [v (range (:n-var adtree))]
+                        {:index v :value QUERY_VALUE_WILDCARD}))]
           (dosync
             (let [[query-vector parent-query-vector]
                     (populate-query-vectors net to queries)
