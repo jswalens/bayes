@@ -296,7 +296,7 @@
               updated-net
                 (dosync ; TODO: why is this in a transaction? -> nodes in net should be refs, or contain refs
                   ; Check if task is still valid
-                  (swap! valid? (is-task-valid? task (:net learner)))
+                  (reset! valid? (is-task-valid? task (:net learner)))
                   (if @valid?
                     ; Perform task: update graph and probabilities
                     (net/apply-operation (:net learner) (:op task) (:from-id task) (:to-id task))))
