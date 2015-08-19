@@ -1,5 +1,6 @@
 (ns bayes.net
-  (:require [priority-queue]))
+  (:require [priority-queue]
+            [bitmap]))
 
 ; Net node marks:
 ; :init
@@ -65,6 +66,11 @@
               (filter #(not (.contains visited %))
                 (get-child-id-list net id)))
             (conj visited id)))))))
+
+(defn find-descendants [net id]
+  "TODO"
+  ; TODO: maybe set instead of bitmap? see learner/find-best-insert-task
+  (bitmap/create (count net)))
 
 (defn generate-random-edges [net max-num-parent percent-parent]
   "Extends `net` with random edges, maximally `max-num-parent` for each node

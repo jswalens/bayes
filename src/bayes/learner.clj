@@ -283,10 +283,71 @@
               delta-log-likelihood)))
       (println "error: unknown task operation type" (:op task)))))
 
-(defn- find-best-insert-task [arg]
-  "TODO"
-  (println "TODO: find-best-insert-task")
-  nil)
+(defn- find-best-insert-task [learner to-id n-total-parent base-penalty base-log-likelihood]
+  "TODO, returns task."
+  (let [net (:net learner)
+        queries (for [v (range (:n-var (:adtree learner)))]
+                  {:index v :value QUERY_VALUE_WILDCARD})]
+    (dosync
+      (let [; Create query-vector and parent-query-vector
+            ; TODO: why is this in the tx?
+            parent-query-vector (populate-parent-query-vector net to-id queries)
+            query-vector        (conj parent-query-vector to-id)
+            ; Search all possible valid operations for better local log likelihood
+            parent-id-list (net/get-parent-id-list net to-id)
+            global_max-num-edge-learned 1] ; TODO: get this from somewhere
+        (if (or (< global_max-num-edge-learned 0)
+                (<= (count parent-id-list) global_max-num-edge-learned))
+          (let [old-local-log-likelihood
+                  (nth @(:local-base-log-likelihoods learner) to-id)
+                invalid-bitmap
+                  (net/find-descendants net to-id)
+                invalid-bitmap-2
+                  (reduce (fn [invalid parent-id] (bitmap/set invalid parent-id))
+                    invalid-bitmap parent-id-list)
+                ; TODO: maybe set instead of bitmap?
+                parent-local-log-likelihoods
+                  (for [from-id parent-id-list
+                        :when (not (bitmap/is-set? invalid-bitmap-2 from-id))
+                        :when (not= from-id to-id)]
+                    (let [local-log-likelihood
+                            (compute-local-log-likelihood
+                              to-id
+                              (:adtree learner)
+                              net
+                              queries
+                              (sort-queries (conj query-vector (nth queries from-id)))
+                              (sort-queries (conj parent-query-vector (nth queries from-id))))]
+                      {:from-id from-id
+                       :local-log-likelihood local-log-likelihood}))
+                {best-from-id :from-id best-local-log-likelihood :local-log-likelihood}
+                  (->>
+                    (conj parent-local-log-likelihoods
+                      {:from-id to-id :local-log-likelihood old-local-log-likelihood})
+                    (sort-by :local-log-likelihood)
+                    (first))
+                global_insert-penalty 1 ; XXX
+                score
+                  (if (= best-from-id to-id)
+                    0.0
+                    (let [n-record (:n-record (:adtree learner))
+                          n-parent (inc (count parent-id-list))
+                          penalty  (* base-penalty
+                                      (+ n-total-parent
+                                         (* n-parent global_insert-penalty)))
+                          log-likelihood (* n-record
+                                            (+ base-log-likelihood
+                                               best-local-log-likelihood
+                                               (- old-local-log-likelihood)))]
+                      (+ penalty log-likelihood)))]
+            {:op      :insert
+             :from-id best-from-id
+             :to-id   to-id
+             :score   score})
+          {:op      :insert
+           :from-id to-id
+           :to-id   to-id
+           :score   0.0})))))
 
 (defn- learn-structure [learner i n]
   (loop []
@@ -316,11 +377,7 @@
               base-penalty (* -0.5 (Math/log (double n-record)))
               base-score (+ (* n-total-parent base-penalty)
                             (* n-record base-log-likelihood))
-              arg {:to-id (:to-id task)
-                   :n-total-parent n-total-parent
-                   :base-penalty base-penalty
-                   :base-log-likelihood base-log-likelihood}
-              new-task (dosync (find-best-insert-task arg))
+              new-task (find-best-insert-task learner (:to-id task) n-total-parent base-penalty base-log-likelihood)
               global_operation-quality-factor 1.0 ; XXX get from somewhere
               best-task
                 (if (and (not= (:from-id new-task) (:to-id new-task))
