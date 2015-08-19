@@ -23,9 +23,29 @@
 (defn get-child-id-list [net id]
   (:child-id-list (nth net id)))
 
+(defn- insert-edge [net from-id to-id]
+  "Returns `net` with an edge added from `from-id` to `to-id`."
+  (-> net
+    (update-in [to-id :parent-id-list] priority-queue/add from-id)
+    (update-in [from-id :child-id-list] priority-queue/add to-id)))
+
+(defn- remove-edge [net from-id to-id]
+  "Returns `net` with the edge from `from-id` to `to-id` removed."
+  (-> net
+    (update-in [to-id :parent-id-list] priority-queue/remove from-id)
+    (update-in [from-id :child-id-list] priority-queue/remove to-id)))
+
+(defn- reverse-edge [net from-id to-id]
+  "Returns `net` with the edge from `from-id` to `to-id` reversed."
+  (insert-edge (remove-edge from-id to-id) to-id from-id))
+
 (defn apply-operation [net op from-id to-id]
-  "TODO"
-  net)
+  "Insert, remove, or reverse an edge of the net."
+  ((case op
+    :insert  insert-edge
+    :remove  remove-edge
+    :reverse reverse-edge)
+    net from-id to-id))
 
 (defn has-edge? [net from-id to-id]
   "Does `net` have an edge between the nodes with ids `from-id` and `to-id`?"
@@ -45,12 +65,6 @@
               (filter #(not (.contains visited %))
                 (get-child-id-list net id)))
             (conj visited id)))))))
-
-(defn- insert-edge [net from-id to-id]
-  "Returns `net` with an edge added from `from-id` to `to-id`."
-  (-> net
-    (update-in [to-id :parent-id-list] priority-queue/add from-id)
-    (update-in [from-id :child-id-list] priority-queue/add to-id)))
 
 (defn generate-random-edges [net max-num-parent percent-parent]
   "Extends `net` with random edges, maximally `max-num-parent` for each node

@@ -8,3 +8,7 @@
 (defn add [queue val]
   "Add `val` to `queue`."
   (sort (conj queue val)))
+
+(defn remove [queue val]
+  "Remove `val` from `queue`."
+  (remove #(= % val) queue))
