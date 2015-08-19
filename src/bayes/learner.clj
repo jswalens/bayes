@@ -17,7 +17,7 @@
   care about that here."
   {:adtree                     adtree
    :net                        (net/alloc (:n-var data))
-   :local-base-log-likelihoods (ref []) ; will contain (:n-var data) floats
+   :local-base-log-likelihoods (ref (vec (repeat (:n-var data) 0.0)))
    :base-log-likelihood        (ref 0.0)
    :tasks                      (ref []) ; sorted by compareTask
    :n-total-parent             (ref 0)
