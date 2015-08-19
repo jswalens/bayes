@@ -292,6 +292,7 @@
                   (if @valid?
                     ; Perform task: update graph and probabilities
                     (net/apply-operation (:net learner) (:op task) (:from-id task) (:to-id task))))
+              _ (println "task processed by thread" i ":" task (if @valid? "(valid)" "(invalid)"))
               delta-log-likelihood
                 (if @valid?
                   (calculate-delta-log-likelihood task learner)
@@ -318,6 +319,7 @@
                   new-task
                   {:op :num :to-id -1 :from-id -1 :score base-score})]
           (when (not= (:to-id best-task) -1)
+            (println "new task on thread" i ":" best-task)
             (dosync
               (alter (:tasks learner) conj best-task))))
       (recur)))))
