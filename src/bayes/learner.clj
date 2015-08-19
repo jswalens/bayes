@@ -271,7 +271,7 @@
             (let [[query-vector parent-query-vector]
                     (populate-query-vectors net to queries)
                   new-base-log-likelihood
-                    (compute-local-log-likelihood to adtree net
+                    (compute-local-log-likelihood to adtree
                       queries query-vector parent-query-vector)
                   to-local-base-log-likelihood
                     (nth @local-base-log-likelihoods to)
