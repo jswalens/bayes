@@ -326,8 +326,8 @@
 
 (defn run [learner]
   "TODO"
-  (dotimes [i (:n-thread learner)]
-    (future (create-tasks learner i (:n-thread learner))))
-  (dotimes [i (:n-thread learner)]
-    (future (learn-structure learner i (:n-thread learner))))
-  learner)
+  (let [n-thread    (:n-thread learner)
+        create-futs (map #(future (create-tasks    learner % n-thread)) (range n-thread))
+        learn-futs  (map #(future (learn-structure learner % n-thread)) (range n-thread))]
+    (doseq [f create-futs] (deref f))
+    (doseq [f learn-futs]  (deref f))))
