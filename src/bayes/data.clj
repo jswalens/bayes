@@ -14,7 +14,7 @@
   (nth (:records data) id))
 
 (defn- get-var [record offset]
-  "Get column `offset` in `record`.."
+  "Get column `offset` in `record`."
   (nth record offset))
 
 (defn- get-record-var [data id offset]
