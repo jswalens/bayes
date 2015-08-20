@@ -75,12 +75,12 @@ Options:                                         (defaults)
           _ (time (learner/run learner))
           _ (println "done.")
           ; Check solution
+          ; TODO implement net/is-cycle? to check solution (optional)
           ;status (net/is-cycle? (:net learner))
           ;_ (when-not status (println "ERROR: solution is incorrect"))
-          ;learn-score (learner/score learner)
-          ;_ (println "Learn score  =" learn-score)
-          ;_ (println "Actual score =" actual-score)
-          ]
+          learn-score (learner/score learner)
+          _ (println "Learn score  =" learn-score)
+          _ (println "Actual score =" actual-score)]
       ; Clean up
       (shutdown-agents))))
 
