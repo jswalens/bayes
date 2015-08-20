@@ -2,7 +2,7 @@
   (:require [clojure.test :refer :all]
             [bayes.data :refer :all]))
 
-(deftest bits->bitmap-test
+(deftest bits->bitmap
   (are [expected in] (= expected (@#'bayes.data/bits->bitmap in))
     2r0   (list 0)
     2r1   (list 1)
@@ -11,3 +11,11 @@
     2r101 (list 1 0 1)
     2r1   (list 0 0 1)
     2r10  (list 0 1 0)))
+
+(deftest concat-uniq
+  (are [xs ys expected] (= expected (@#'bayes.data/concat-uniq xs ys))
+    [1 2 3] [4 5 6] [1 2 3 4 5 6]
+    [1 2 3] [1 5 6] [1 2 3 5 6]
+    [1 2 3] [1 3 3] [1 2 3]
+    []      [4 5 6] [4 5 6]
+    [1 2 3] []      [1 2 3]))
