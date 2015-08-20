@@ -4,6 +4,10 @@
 
 (def ^:const QUERY_VALUE_WILDCARD -1)
 
+;
+; alloc
+;
+
 (defn alloc [adtree params]
   "Allocate the learner.
 
@@ -26,6 +30,10 @@
    :insert-penalty             (:insert params)
    :operation-quality-factor   (:quality params)})
 
+;
+; Helper functions to manage tasks
+;
+
 (defn- add-task [tasks task]
   "Add `task` to `tasks`, ordered by score."
   (dosync
@@ -46,6 +54,9 @@
         (alter tasks pop)
         v))))
 
+;
+; Queries
+;
 ; queries are a vector of maps {:index ... :value ...}, e.g:
 ; [{:index 0 :value -1} {:index 1 :value 1} {:index 2 :value 0} ...]
 ; where :index of query i is always i (I think XXX), and value is either 0, 1,
@@ -64,6 +75,9 @@
   "Set value of query at `index` in `queries` to `value`."
   (assoc-in queries [index :value] value))
 
+;
+; Query vector & parent query vector
+;
 ; In the C version, a query-vector or a parent-query-vector is a vector of
 ; pointers to a query. Therefore, changing a query's value is reflected in all
 ; (parent-)query-vectors in which it is included.
@@ -79,6 +93,10 @@
         query-vector        (sort-queries (conj parent-query-vector id))]
     [query-vector parent-query-vector]))
 
+;
+; Functions to compute (specific) local log likelihood
+;
+
 (defn- compute-specific-local-log-likelihood [adtree queries query-vector parent-query-vector]
   (let [count (adtree/get-count adtree queries query-vector)]
     (if (= count 0)
@@ -90,20 +108,22 @@
 (defn- compute-local-log-likelihood-helper [i adtree queries query-vector parent-query-vector]
   (if (>= i (count parent-query-vector))
     (compute-specific-local-log-likelihood adtree queries query-vector parent-query-vector)
-    (+
-      (compute-local-log-likelihood-helper (inc i) adtree
-        (set-query-value queries (nth parent-query-vector i) 0)
-        query-vector parent-query-vector)
-      (compute-local-log-likelihood-helper (inc i) adtree
-        (set-query-value queries (nth parent-query-vector i) 1)
-        query-vector parent-query-vector))))
+    (+ (compute-local-log-likelihood-helper (inc i) adtree
+         (set-query-value queries (nth parent-query-vector i) 0)
+         query-vector parent-query-vector)
+       (compute-local-log-likelihood-helper (inc i) adtree
+         (set-query-value queries (nth parent-query-vector i) 1)
+         query-vector parent-query-vector))))
 
 (defn- compute-local-log-likelihood [id adtree queries query-vector parent-query-vector]
-  (+
-    (compute-local-log-likelihood-helper 0 adtree (set-query-value queries id 0)
-      query-vector parent-query-vector)
-    (compute-local-log-likelihood-helper 0 adtree (set-query-value queries id 1)
-      query-vector parent-query-vector)))
+  (+ (compute-local-log-likelihood-helper 0 adtree (set-query-value queries id 0)
+       query-vector parent-query-vector)
+     (compute-local-log-likelihood-helper 0 adtree (set-query-value queries id 1)
+       query-vector parent-query-vector)))
+
+;
+; score
+;
 
 (defn- sum [ns]
   "Sums `ns`."
@@ -140,6 +160,10 @@
         score
           (+ penalty (* n-record log-likelihood))]
     score))
+
+;
+; run
+;
 
 (defn- create-partition [minimum maximum i n]
   "Given a range from `minimum` to `maximum`, returns the subrange for chunk `i`
