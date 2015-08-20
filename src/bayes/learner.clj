@@ -254,10 +254,17 @@
                         (net/is-path?  net to from)))
       :remove  true ; can never create cycle, so always valid
       :reverse (not (net/is-path?
-                      (net/apply-operation net :remove from to)
-                      ; temporarily remove edge for check
+                      (net/remove-edge net from to) ; temp remove edge for check
                       from to))
       (println "ERROR: unknown task operation type" (:op task)))))
+
+(defn- apply-task [task net]
+  "Apply `task` to `net`."
+  ((case (:op task)
+    :insert  net/insert-edge
+    :remove  net/remove-edge
+    :reverse net/reverse-edge)
+    net (:from-id task) (:to-id task)))
 
 (defn- calculate-delta-log-likelihood [task learner]
   "Returns delta-log-likelihood, and sets the local-base-log-likelihoods and
@@ -359,7 +366,7 @@
                   (reset! valid? (is-task-valid? task (:net learner)))
                   (if @valid?
                     ; Perform task: update graph and probabilities
-                    (net/apply-operation (:net learner) (:op task) (:from-id task) (:to-id task))))
+                    (apply-task task (:net learner))))
               _ (println "task processed by thread" i ":" task (if @valid? "(valid)" "(invalid)"))
               delta-log-likelihood
                 (if @valid?

@@ -2,6 +2,10 @@
   (:require [priority-queue]
             [bitmap]))
 
+;
+; alloc
+;
+
 (defn- alloc-node [id]
   "Returns an empty node with `id`."
   {:id         id
@@ -12,35 +16,35 @@
   "Returns a net of `n` nodes."
   (vec (map alloc-node (range n))))
 
+;
+; get-parent-ids and get-child-ids
+;
+
 (defn get-parent-ids [net id]
   (:parent-ids (nth net id)))
 
 (defn get-child-ids [net id]
   (:child-ids (nth net id)))
 
-(defn- insert-edge [net from-id to-id]
+;
+; insert, remove and reverse edge
+;
+
+(defn insert-edge [net from-id to-id]
   "Returns `net` with an edge added from `from-id` to `to-id`."
   (-> net
     (update-in [to-id :parent-ids] priority-queue/add from-id)
     (update-in [from-id :child-ids] priority-queue/add to-id)))
 
-(defn- remove-edge [net from-id to-id]
+(defn remove-edge [net from-id to-id]
   "Returns `net` with the edge from `from-id` to `to-id` removed."
   (-> net
     (update-in [to-id :parent-ids] priority-queue/remove from-id)
     (update-in [from-id :child-ids] priority-queue/remove to-id)))
 
-(defn- reverse-edge [net from-id to-id]
+(defn reverse-edge [net from-id to-id]
   "Returns `net` with the edge from `from-id` to `to-id` reversed."
   (insert-edge (remove-edge from-id to-id) to-id from-id))
-
-(defn apply-operation [net op from-id to-id]
-  "Insert, remove, or reverse an edge of the net."
-  ((case op
-    :insert  insert-edge
-    :remove  remove-edge
-    :reverse reverse-edge)
-    net from-id to-id))
 
 (defn has-edge? [net from-id to-id]
   "Does `net` have an edge between the nodes with ids `from-id` and `to-id`?"
