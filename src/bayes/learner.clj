@@ -2,8 +2,6 @@
   (:require [bayes.net :as net]
             [bayes.adtree :as adtree]))
 
-(def ^:const QUERY_VALUE_WILDCARD -1)
-
 ;
 ; alloc
 ;
@@ -66,6 +64,8 @@
 ;
 ; TODO: is it still necessary to keep the index in the query for the Clojure
 ; version?
+
+(def ^:const QUERY_VALUE_WILDCARD -1)
 
 (defn- sort-queries [queries]
   "Sort a list of queries by their index."
