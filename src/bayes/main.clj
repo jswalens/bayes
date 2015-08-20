@@ -97,7 +97,8 @@ Options:                                         (defaults)
           ; Learn structure of Bayesian network
           _ (println "Learning structure...")
           learner
-            (time (learner/run (learner/alloc data adtree params)))
+            (learner/alloc data adtree params)
+          _ (time (learner/run learner))
           _ (println "done.")
           ; Check solution
           ;status
