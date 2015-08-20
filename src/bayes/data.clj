@@ -50,16 +50,6 @@
         net
           (net/generate-random-edges
             (net/alloc n-var) max-num-parent percent-parent)
-        ; Create a threshold for each of the possible permutations of variable
-        ; value instances.
-        ; This is a 2D array: variable -> bitmap -> (random) int. The bitmap has
-        ; length = the variable's number of parents. All permutations of the
-        ; bitmap are iterated through. So, given a variable and an on/off state
-        ; for each of its parents, this returns a (randomly generated) integer.
-        thresholds
-          (for [v (range n-var)]
-            (for [t (range (math/expt 2 (count (net/get-parent-id-list net v))))]
-              (rand-int (inc DATA_PRECISION))))
         ; Create variable dependency ordering for record generation.
         ; Each of order[i]'s parents are sorted before i in order, i.e:
         ;   for all i: for all p in parents[order[i]]:
@@ -90,6 +80,16 @@
                       order-1
                         (concat-uniq order (reverse dependencies))]
                   (recur (bitmap/find-clear done (inc id)) order-1 done-1)))))
+        ; Create a threshold for each of the possible permutations of variable
+        ; value instances.
+        ; This is a 2D array: variable -> bitmap -> (random) int. The bitmap has
+        ; length = the variable's number of parents. All permutations of the
+        ; bitmap are iterated through. So, given a variable and an on/off state
+        ; for each of its parents, this returns a (randomly generated) integer.
+        thresholds
+          (for [v (range n-var)]
+            (for [t (range (math/expt 2 (count (net/get-parent-id-list net v))))]
+              (rand-int (inc DATA_PRECISION))))
         ; Create records
         ; records is a list mapping each record id to a record, which is a list
         ; of 0s and 1s of length n-var
@@ -97,18 +97,16 @@
           (for [r (range n-record)]
             (reduce
               (fn [record o]
-                (let [id (nth order o)
-                      values ; list of 0s and 1s
-                        (for [p (net/get-parent-id-list net id)]
-                          ; ordering ensures that p < o (see [1]), so record
-                          ; will have an index p at iteration o of the reduce
-                          (get-var record p))
-                      bitmap
-                        (bits->bitmap values)
-                      threshold
-                        (nth (nth thresholds id) bitmap)
-                      rnd
-                        (rand-int DATA_PRECISION)]
+                (let [id        (nth order o)
+                      values    ; list of 0s and 1s
+                                (for [p (net/get-parent-id-list net id)]
+                                  ; ordering ensures that p < o (see [1]), so
+                                  ; record will have index p at iteration o of
+                                  ; the reduce
+                                  (get-var record p))
+                      bitmap    (bits->bitmap values)
+                      threshold (nth (nth thresholds id) bitmap)
+                      rnd       (rand-int DATA_PRECISION)]
                   (if (< rnd threshold)
                     (assoc record id 1)
                     (assoc record id 0))))
