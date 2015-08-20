@@ -4,7 +4,7 @@
 
 (def ^:const QUERY_VALUE_WILDCARD -1)
 
-(defn alloc [data adtree params]
+(defn alloc [adtree params]
   "Allocate the learner.
 
   We have an extra parameter params to get some globals.
@@ -16,8 +16,8 @@
   In the C version, parts of this struct are aligned to cache lines. We don't
   care about that here."
   {:adtree                     adtree
-   :net                        (net/alloc (:n-var data))
-   :local-base-log-likelihoods (ref (vec (repeat (:n-var data) 0.0)))
+   :net                        (net/alloc (:n-var adtree))
+   :local-base-log-likelihoods (ref (vec (repeat (:n-var adtree) 0.0)))
    :base-log-likelihood        (ref 0.0)
    :tasks                      (ref []) ; sorted by compareTask
    :n-total-parent             (ref 0)
