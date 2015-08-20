@@ -1,6 +1,7 @@
 (ns bayes.net
   (:require [priority-queue]
-            [bitmap]))
+            [bitmap]
+            [random]))
 
 ;
 ; alloc
@@ -103,8 +104,8 @@
   with a chance of `percent-parent`."
   (reduce
     (fn [net [n p]]
-      (if (< (rand-int 100) percent-parent)
-        (let [parent (rand-int (count net))]
+      (if (< (random/rand-int 100) percent-parent)
+        (let [parent (random/rand-int (count net))]
           (if (and (not= parent n)
                    (not (has-edge? net parent n))
                    (not (has-path? net n parent)))

@@ -1,6 +1,7 @@
 (ns bayes.data
   (:require [clojure.math.numeric-tower :as math]
             [bitmap]
+            [random]
             [bayes.net :as net]))
 
 (def ^:const DATA_PRECISION 100)
@@ -89,7 +90,7 @@
         thresholds
           (for [v (range n-var)]
             (for [t (range (math/expt 2 (count (net/get-parent-ids net v))))]
-              (rand-int (inc DATA_PRECISION))))
+              (random/rand-int (inc DATA_PRECISION))))
         ; Create records
         ; records is a list mapping each record id to a record, which is a list
         ; of 0s and 1s of length n-var
@@ -106,7 +107,7 @@
                                   (get-var record p))
                       bitmap    (bits->bitmap values)
                       threshold (nth (nth thresholds id) bitmap)
-                      rnd       (rand-int DATA_PRECISION)]
+                      rnd       (random/rand-int DATA_PRECISION)]
                   (if (< rnd threshold)
                     (assoc record id 1)
                     (assoc record id 0))))

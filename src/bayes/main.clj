@@ -1,6 +1,7 @@
 (ns bayes.main
   (:gen-class)
-  (:require [bayes.data :as data]
+  (:require [random]
+            [bayes.data :as data]
             [bayes.adtree :as adtree]
             [bayes.learner :as learner]
             [taoensso.timbre.profiling :refer [profile]]))
@@ -39,21 +40,6 @@ Options:                                         (defaults)
   ; TODO: actually parse arguments
   default-params)
 
-(defn- set-rand-seed [seed]
-  "Set random seed, by setting seed of random number generator used by
-  java.lang.Math. Very hacky and dependent on the JVM version."
-  ; TODO: instead of this hacky thing, simply redefine clojure.core's rand to
-  ; my own version which uses a new (global) java.util.Random() and allow the
-  ; seed of that to be set.
-  (let [; JDK 7?
-        ;field (.getDeclaredField Math "randomNumberGenerator")
-        ; JDK 8
-        rnghc (Class/forName "java.lang.Math$RandomNumberGeneratorHolder")
-        field (.getDeclaredField rnghc "randomNumberGenerator")
-        _     (.setAccessible field true) ; circumvent private
-        rng   (.get field nil)]
-    (.setSeed rng seed)))
-
 (defn score [net adtree params]
   "Score `net`."
   (let [learner (assoc (learner/alloc adtree params) :net net)]
@@ -73,7 +59,7 @@ Options:                                         (defaults)
     (println "Operation quality factor   =" (:quality params))
     ; Generate data
     (println "Generating data...")
-    (set-rand-seed (:seed params))
+    (random/set-seed (:seed params))
     (let [{data :data net :net} (data/generate params)
           _ (println "done.")
           ; Generate adtree
