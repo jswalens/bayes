@@ -46,11 +46,15 @@
   "Returns `net` with the edge from `from-id` to `to-id` reversed."
   (insert-edge (remove-edge from-id to-id) to-id from-id))
 
+;
+; has-edge? and has-path?
+;
+
 (defn has-edge? [net from-id to-id]
   "Does `net` have an edge between the nodes with ids `from-id` and `to-id`?"
   (.contains (get-parent-ids net to-id) from-id))
 
-(defn is-path? [net from-id to-id]
+(defn has-path? [net from-id to-id]
   "Returns true if there is a path from `from-id` to `to-id` in `net`."
   (loop [queue   [from-id]
          visited #{}]
@@ -65,6 +69,10 @@
                 (get-child-ids net id)))
             (conj visited id)))))))
 
+;
+; find-descendants
+;
+
 (defn- concat-uniq [xs ys]
   "Concat `xs` and `ys`, but do not add elements in `ys` that are already in
   `xs`."
@@ -78,10 +86,15 @@
       descendants
       (let [child-id (peek queue)]
         (if (= child-id id)
-          (println "ERROR: could not find descendants")
+          (println "ERROR: could not find descendants: node" id
+            "is a descendant of itself (net contains a cycle)")
           (recur
             (into descendants (get-child-ids net child-id))
             (concat-uniq (pop queue) (get-child-ids net child-id))))))))
+
+;
+; generate-random-edges
+;
 
 (defn generate-random-edges [net max-num-parent percent-parent]
   "Extends `net` with random edges, maximally `max-num-parent` for each node
@@ -92,7 +105,7 @@
         (let [parent (rand-int (count net))]
           (if (and (not= parent n)
                    (not (has-edge? net parent n))
-                   (not (is-path? net n parent)))
+                   (not (has-path? net n parent)))
             (insert-edge net parent n)
             net))
         net))
@@ -100,4 +113,4 @@
     (for [n (range (count net))
           p (range max-num-parent)]
       [n p])))
-    ; TODO: assert (not (is-cycle? net). Or not?
+    ; TODO: assert (not (is-cycle? net).

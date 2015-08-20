@@ -251,9 +251,9 @@
         to   (:to-id task)]
     (case (:op task)
       :insert  (not (or (net/has-edge? net from to)
-                        (net/is-path?  net to from)))
+                        (net/has-path?  net to from)))
       :remove  true ; can never create cycle, so always valid
-      :reverse (not (net/is-path?
+      :reverse (not (net/has-path?
                       (net/remove-edge net from to) ; temp remove edge for check
                       from to))
       (println "ERROR: unknown task operation type" (:op task)))))
