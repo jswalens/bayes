@@ -80,7 +80,7 @@
       descendants
       (let [child-id (peek queue)]
         (if (= child-id id)
-          (println "error: could not find descendants")
+          (println "ERROR: could not find descendants")
           (recur
             (into descendants (get-child-id-list net child-id))
             (concat-without-dups (pop queue) (get-child-id-list net child-id))))))))

@@ -257,7 +257,7 @@
                       (net/apply-operation net :remove from to)
                       ; temporarily remove edge for check
                       from to))
-      (println "error: unknown task operation type" (:op task)))))
+      (println "ERROR: unknown task operation type" (:op task)))))
 
 (defn- calculate-delta-log-likelihood [task learner]
   "Returns delta-log-likelihood, and sets the local-base-log-likelihoods and
@@ -284,7 +284,7 @@
               ; The following happens in a separate tx in the C version
               (commute (:n-total-parent learner) inc)
               delta-log-likelihood)))
-      (println "error: unknown task operation type" (:op task)))))
+      (println "ERROR: unknown task operation type" (:op task)))))
 
 (defn- find-best-insert-task [learner to-id n-total-parent base-penalty base-log-likelihood]
   "TODO, returns task."
