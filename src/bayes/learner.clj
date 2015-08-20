@@ -4,10 +4,10 @@
 
 (def ^:const QUERY_VALUE_WILDCARD -1)
 
-(defn alloc [data adtree n-thread]
+(defn alloc [data adtree params]
   "Allocate the learner.
 
-  We have an extra parameter :n-thread to contain the number of threads to use.
+  We have an extra parameter params to get some globals.
 
   The C version has tasks, an array containing tasks, and taskList, an ordered
   list of pointers to tasks (ordered by compareTask). We only have tasks, as an
@@ -21,7 +21,10 @@
    :base-log-likelihood        (ref 0.0)
    :tasks                      (ref []) ; sorted by compareTask
    :n-total-parent             (ref 0)
-   :n-thread                   n-thread})
+   :n-thread                   (:thread params)
+   :max-num-edge-learned       (:edge params)
+   :insert-penalty             (:insert params)
+   :operation-quality-factor   (:quality params)})
 
 (defn- add-task [tasks task]
   "Add `task` to `tasks`, ordered by score."
@@ -295,9 +298,9 @@
             query-vector        (conj parent-query-vector to-id)
             ; Search all possible valid operations for better local log likelihood
             parent-id-list (net/get-parent-id-list net to-id)
-            global_max-num-edge-learned 1] ; TODO: get this from somewhere
-        (if (or (< global_max-num-edge-learned 0)
-                (<= (count parent-id-list) global_max-num-edge-learned))
+            max-num-edge-learned (:max-num-edge-learned learner)]
+        (if (or (< max-num-edge-learned 0)
+                (<= (count parent-id-list) max-num-edge-learned))
           (let [old-local-log-likelihood
                   (nth @(:local-base-log-likelihoods learner) to-id)
                 invalid-ids
@@ -322,7 +325,6 @@
                       {:from-id to-id :local-log-likelihood old-local-log-likelihood})
                     (sort-by :local-log-likelihood)
                     (first))
-                global_insert-penalty 1 ; XXX
                 score
                   (if (= best-from-id to-id)
                     0.0
@@ -330,7 +332,7 @@
                           n-parent (inc (count parent-id-list))
                           penalty  (* base-penalty
                                       (+ n-total-parent
-                                         (* n-parent global_insert-penalty)))
+                                         (* n-parent (:insert-penalty learner))))
                           log-likelihood (* n-record
                                             (+ base-log-likelihood
                                                best-local-log-likelihood
@@ -374,10 +376,9 @@
               base-score (+ (* n-total-parent base-penalty)
                             (* n-record base-log-likelihood))
               new-task (find-best-insert-task learner (:to-id task) n-total-parent base-penalty base-log-likelihood)
-              global_operation-quality-factor 1.0 ; XXX get from somewhere
               best-task
                 (if (and (not= (:from-id new-task) (:to-id new-task))
-                         (> (:score new-task) (/ base-score global_operation-quality-factor)))
+                         (> (:score new-task) (/ base-score (:operation-quality-factor learner))))
                   new-task
                   {:op :num :to-id -1 :from-id -1 :score base-score})]
           (when (not= (:to-id best-task) -1)

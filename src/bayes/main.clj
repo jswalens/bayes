@@ -6,7 +6,7 @@
             [taoensso.timbre.profiling :refer [profile]]))
 
 (def default-params
-  {:edge    -1
+  {:edge    1
    :insert  1
    :number  4
    :percent 10
@@ -31,7 +31,7 @@ Options:                                         (defaults)
     p <UINT>   [p]ercent chance of parent        (10)
     q <FLT>    Operation [q]uality factor        (1.0)
     r <UINT>   Number of [r]ecords               (4096)
-    s <UINT>   Random [s]eed (IGNORED)           (1)
+    s <UINT>   Random [s]eed                     (1)
     t <UINT>   Number of [t]hreads               (1)
     v <UINT>   Number of [v]ariables             (32)
 ")
@@ -58,10 +58,10 @@ Options:                                         (defaults)
         rng   (.get field nil)]
     (.setSeed rng seed)))
 
-(defn score [net adtree]
+(defn score [net adtree params]
   "Score `net`."
   (let [data    (data/alloc 1 1)
-        learner (assoc (learner/alloc data adtree 1) :net net)]
+        learner (assoc (learner/alloc data adtree params) :net net)]
     (learner/score learner)))
 
 (defn -main [& args]
@@ -92,12 +92,12 @@ Options:                                         (defaults)
           _ (println "done.")
           ; Score original network
           actual-score
-            (score net adtree)
+            (score net adtree params)
           _ (println "actual score:" actual-score)
           ; Learn structure of Bayesian network
           _ (println "Learning structure...")
           learner
-            (time (learner/run (learner/alloc data adtree (:thread params))))
+            (time (learner/run (learner/alloc data adtree params)))
           _ (println "done.")
           ; Check solution
           ;status
