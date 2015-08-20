@@ -21,9 +21,11 @@
 ;
 
 (defn get-parent-ids [net id]
+  "Get ids of parents of node `id` in `net`."
   (:parent-ids (nth net id)))
 
 (defn get-child-ids [net id]
+  "Get ids of children of node `id` in `net`."
   (:child-ids (nth net id)))
 
 ;

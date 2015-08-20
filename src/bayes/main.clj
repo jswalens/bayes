@@ -14,11 +14,10 @@
    ; In the C version, the default for :record is 4096 and for :var 32. However,
    ; adtree/make takes > 500 seconds on my machine for these values. For 256
    ; records and 16 variables this is only 0.4s.
-   :record  256 ; 4096
+   :record  256  ; 4096
    :seed    1
    :thread  1
-   :var     16  ; 32
-  })
+   :var     16}) ; 32
 
 (def usage
 "Usage: ./bayes [options]
@@ -33,10 +32,7 @@ Options:                                         (defaults)
     r <UINT>   Number of [r]ecords               (4096)
     s <UINT>   Random [s]eed                     (1)
     t <UINT>   Number of [t]hreads               (1)
-    v <UINT>   Number of [v]ariables             (32)
-")
-
-(def log println)
+    v <UINT>   Number of [v]ariables             (32)")
 
 (defn parse-args [args]
   "Parse the arguments."

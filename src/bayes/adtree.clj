@@ -5,10 +5,22 @@
 ; make
 ;
 
-(declare make-vary)
 (declare make-node)
+(declare make-vary)
+
+(defn- make-node [parent-i i start n data]
+  "Create a node in the adtree. A node contains a vary vector, whose elements
+  have pointers to other nodes.
+
+  Count is the number of records it contains."
+  {:index       i
+   :value       -1
+   :count       n
+   :vary-vector (doall (for [v (range (inc i) (:n-var data))]
+                  (make-vary parent-i v start n data)))})
 
 (defn- make-vary [parent-i i start n data]
+  "Make an element of the vary vector of a node in the adtree."
   (let [data (if (and (not= (inc parent-i) i) (> n 1))
                 (data/sort data start n i)
                 data)
@@ -27,17 +39,6 @@
                           (->
                             (make-node i i (+ start n-0) n-1 data)
                             (assoc :value 1)))}))
-
-(defn- make-node [parent-i i start n data]
-  "Create a node in the adtree. A node contains a vary vector, whose elements
-  have pointers to other nodes.
-
-  Count is the number of records it contains."
-  {:index       i
-   :value       -1
-   :count       n
-   :vary-vector (doall (for [v (range (inc i) (:n-var data))]
-                  (make-vary parent-i v start n data)))})
 
 (defn make [data]
   "Make ADTree (alternating decision tree) based on `data`."
