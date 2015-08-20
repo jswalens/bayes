@@ -41,7 +41,7 @@ Options:                                         (defaults)
   default-params)
 
 (defn score [net adtree params]
-  "Score `net`."
+  "Score `net` without learning."
   (let [learner (assoc (learner/alloc adtree params) :net net)]
     (learner/score learner)))
 
