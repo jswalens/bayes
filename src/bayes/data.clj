@@ -5,6 +5,10 @@
 
 (def ^:const DATA_PRECISION 100)
 
+;
+; Helper functions to access records
+;
+
 (defn- get-record [data id]
   "Get record with index `id` from `data`."
   (nth (:records data) id))
@@ -17,26 +21,25 @@
   "Get column `offset` in record with index `id` from `data`."
   (get-var (get-record data id) offset))
 
+;
+; generate
+;
+
 (defn- bits->bitmap [bits]
   "Convert a list of 0 and 1 to a bitmap, i.e. an int where each bit is set
   correspondingly.
   (bits->bitmap (list 1 0 1)) => 0b101"
-  (reduce
-    (fn [bitmap bit]
-      (+ (* bitmap 2) bit))
-    0
-    bits))
+  (reduce #(+ (* %1 2) %2) 0 bits))
 
-(defn- conj-uniq [coll x]
-  "Conjoins `x` to `coll`, as conj, but only if `coll` doesn't contain x."
-  (if (.contains coll x)
-    coll
-    (conj coll x)))
+(defn- concat-uniq [xs ys]
+  "Concat `xs` and `ys`, but do not add elements in `ys` that are already in
+  `xs`."
+  (concat xs (filter #(not (.contains xs %)) ys)))
 
 (defn generate [params]
   "Allocate and generate data, returns `{:data data :net net}`.
 
-  This replaces the C version's allocate and generate functions.
+  This replaces the C version's alloc and generate functions.
 
   As opposed to the C version, this doesn't take a seed."
   (let [n-var          (:var params)
@@ -48,51 +51,45 @@
           (net/generate-random-edges
             (net/alloc n-var) max-num-parent percent-parent)
         ; Create a threshold for each of the possible permutations of variable
-        ; value instances
-        ; In the C version, this is a 2D array variable -> bitmap -> (random)
-        ; int. The bitmap has length = the variable's number of parents. All
-        ; permutations of the bitmap are iterated through. So, given a variable
-        ; and an on/off state for each of its parents, this returns an integer.
+        ; value instances.
+        ; This is a 2D array: variable -> bitmap -> (random) int. The bitmap has
+        ; length = the variable's number of parents. All permutations of the
+        ; bitmap are iterated through. So, given a variable and an on/off state
+        ; for each of its parents, this returns a (randomly generated) integer.
         thresholds
           (for [v (range n-var)]
             (for [t (range (math/expt 2 (count (net/get-parent-id-list net v))))]
               (rand-int (inc DATA_PRECISION))))
         ; Create variable dependency ordering for record generation.
-        ; Each of order[i]'s parents are sorted before i in order, i.e.
-        ; for all i: for all p in parents[order[i]]:
-        ; index-of(p in order) < i   [1]
+        ; Each of order[i]'s parents are sorted before i in order, i.e:
+        ;   for all i: for all p in parents[order[i]]:
+        ;   index-of(p in order) < i   [1]
         order
-          (loop [; id of node currently being visited
-                 id      0
-                 ; order of node ids
-                 order   []
-                 ; nodes that have been visited
-                 done    (bitmap/create n-var)]
+          (loop [id    0  ; id of node currently being visited (index)
+                 order [] ; order of node ids (accumulator)
+                 done  (bitmap/create n-var)] ; nodes that have been visited
             (if (nil? id)
-              order ; bitmap/find-clear found no more nodes
+              order ; bitmap/find-clear found no more nodes => everything's done
               (if (not= (count (net/get-child-id-list net id)) 0)
                 ; This node has children
-                (recur
-                  (bitmap/find-clear done (inc id))
-                  order done)
+                (recur (bitmap/find-clear done (inc id)) order done)
                 ; This node has no children, it is a leaf
-                (let [; Use breadth-first search to find net connected to this leaf
-                      [updated-done dependencies]
+                (let [; Use breadth-first search to find net connected to this
+                      ; leaf (i.e. ancestors of this leaf)
+                      dependencies
                         (loop [queue        [id]
-                               updated-done done
                                dependencies []]
                           (if (empty? queue)
-                            [updated-done dependencies]
+                            dependencies
                             (let [[fst & rst] queue]
                               (recur
                                 (concat rst (net/get-parent-id-list net fst))
-                                (bitmap/set updated-done fst)
                                 (conj dependencies fst)))))
-                      ; Create ordering
-                      updated-order
-                        (reduce conj-uniq order (reverse dependencies))]
-                  (recur (bitmap/find-clear done (inc id))
-                    updated-order updated-done)))))
+                      done-1
+                        (reduce #(bitmap/set %1 %2) done dependencies)
+                      order-1
+                        (concat-uniq order (reverse dependencies))]
+                  (recur (bitmap/find-clear done (inc id)) order-1 done-1)))))
         ; Create records
         ; records is a list mapping each record id to a record, which is a list
         ; of 0s and 1s of length n-var
@@ -119,6 +116,10 @@
               (range n-var)))]
     ; Return
     {:data {:n-var n-var :n-record n-record :records records} :net net}))
+
+;
+; sort
+;
 
 (defn- compare-record [a b offset]
   "Compare records `a` and `b` by a lexicographic order on its columns starting
@@ -148,6 +149,10 @@
   "Sort records with id `start` to `start + n` in `data`, based on values in
   their columns at index `offset` and later. Returns updated data."
   (assoc data :records (sort-records data start n offset)))
+
+;
+; find-split
+;
 
 (defn find-split [data start n offset]
   "We take the records with id `start` to `start + n` from `data`. Then, we take
