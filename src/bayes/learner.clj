@@ -72,7 +72,7 @@
 ; we have an extra bit of indirection.
 
 (defn- populate-parent-query-vector [net id queries]
-  (net/get-parent-id-list net id))
+  (net/get-parent-ids net id))
 
 (defn- populate-query-vectors [net id queries]
   (let [parent-query-vector (populate-parent-query-vector net id queries)
@@ -118,7 +118,7 @@
         n-total-parent
           (sum
             (map
-              (fn [v] (count (net/get-parent-id-list (:net learner) v)))
+              (fn [v] (count (net/get-parent-ids (:net learner) v)))
               (range n-var)))
         log-likelihood
           (sum
@@ -297,16 +297,16 @@
             parent-query-vector (populate-parent-query-vector net to-id queries)
             query-vector        (conj parent-query-vector to-id)
             ; Search all possible valid operations for better local log likelihood
-            parent-id-list (net/get-parent-id-list net to-id)
+            parent-ids           (net/get-parent-ids net to-id)
             max-num-edge-learned (:max-num-edge-learned learner)]
         (if (or (< max-num-edge-learned 0)
-                (<= (count parent-id-list) max-num-edge-learned))
+                (<= (count parent-ids) max-num-edge-learned))
           (let [old-local-log-likelihood
                   (nth @(:local-base-log-likelihoods learner) to-id)
                 invalid-ids
-                  (into (net/find-descendants net to-id) parent-id-list)
+                  (into (net/find-descendants net to-id) parent-ids)
                 parent-local-log-likelihoods
-                  (for [from-id parent-id-list
+                  (for [from-id parent-ids
                         :when (not (.contains invalid-ids from-id))
                         :when (not= from-id to-id)]
                     (let [local-log-likelihood
@@ -329,7 +329,7 @@
                   (if (= best-from-id to-id)
                     0.0
                     (let [n-record (:n-record (:adtree learner))
-                          n-parent (inc (count parent-id-list))
+                          n-parent (inc (count parent-ids))
                           penalty  (* base-penalty
                                       (+ n-total-parent
                                          (* n-parent (:insert-penalty learner))))

@@ -2,39 +2,33 @@
   (:require [priority-queue]
             [bitmap]))
 
-; Net node marks:
-; :init
-; :done
-; :test
-
 (defn- alloc-node [id]
   "Returns an empty node with `id`."
-  {:id             id
-   :parent-id-list (priority-queue/create) ; list of parent ids, ordered
-   :child-id-list  (priority-queue/create) ; list of child ids, ordered
-   :net-node-mark  :init})
+  {:id         id
+   :parent-ids (priority-queue/create)   ; ordered list of parent ids
+   :child-ids  (priority-queue/create)}) ; ordered list of child ids
 
 (defn alloc [n]
   "Returns a net of `n` nodes."
   (vec (map alloc-node (range n))))
 
-(defn get-parent-id-list [net id]
-  (:parent-id-list (nth net id)))
+(defn get-parent-ids [net id]
+  (:parent-ids (nth net id)))
 
-(defn get-child-id-list [net id]
-  (:child-id-list (nth net id)))
+(defn get-child-ids [net id]
+  (:child-ids (nth net id)))
 
 (defn- insert-edge [net from-id to-id]
   "Returns `net` with an edge added from `from-id` to `to-id`."
   (-> net
-    (update-in [to-id :parent-id-list] priority-queue/add from-id)
-    (update-in [from-id :child-id-list] priority-queue/add to-id)))
+    (update-in [to-id :parent-ids] priority-queue/add from-id)
+    (update-in [from-id :child-ids] priority-queue/add to-id)))
 
 (defn- remove-edge [net from-id to-id]
   "Returns `net` with the edge from `from-id` to `to-id` removed."
   (-> net
-    (update-in [to-id :parent-id-list] priority-queue/remove from-id)
-    (update-in [from-id :child-id-list] priority-queue/remove to-id)))
+    (update-in [to-id :parent-ids] priority-queue/remove from-id)
+    (update-in [from-id :child-ids] priority-queue/remove to-id)))
 
 (defn- reverse-edge [net from-id to-id]
   "Returns `net` with the edge from `from-id` to `to-id` reversed."
@@ -50,7 +44,7 @@
 
 (defn has-edge? [net from-id to-id]
   "Does `net` have an edge between the nodes with ids `from-id` and `to-id`?"
-  (.contains (get-parent-id-list net to-id) from-id))
+  (.contains (get-parent-ids net to-id) from-id))
 
 (defn is-path? [net from-id to-id]
   "Returns true if there is a path from `from-id` to `to-id` in `net`."
@@ -64,7 +58,7 @@
           (recur
             (concat (rest queue)
               (filter #(not (.contains visited %))
-                (get-child-id-list net id)))
+                (get-child-ids net id)))
             (conj visited id)))))))
 
 (defn- concat-uniq [xs ys]
@@ -74,16 +68,16 @@
 
 (defn find-descendants [net id]
   "Returns set of descendants of the node `id` in `net`."
-  (loop [descendants (into #{} (get-child-id-list net id))
-         queue       (into []  (get-child-id-list net id))]
+  (loop [descendants (into #{} (get-child-ids net id))
+         queue       (into []  (get-child-ids net id))]
     (if (empty? queue)
       descendants
       (let [child-id (peek queue)]
         (if (= child-id id)
           (println "ERROR: could not find descendants")
           (recur
-            (into descendants (get-child-id-list net child-id))
-            (concat-uniq (pop queue) (get-child-id-list net child-id))))))))
+            (into descendants (get-child-ids net child-id))
+            (concat-uniq (pop queue) (get-child-ids net child-id))))))))
 
 (defn generate-random-edges [net max-num-parent percent-parent]
   "Extends `net` with random edges, maximally `max-num-parent` for each node
