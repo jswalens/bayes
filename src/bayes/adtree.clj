@@ -1,6 +1,10 @@
 (ns bayes.adtree
   (:require [bayes.data :as data]))
 
+;
+; make
+;
+
 (declare make-vary)
 (declare make-node)
 
@@ -25,6 +29,10 @@
                             (assoc :value 1)))}))
 
 (defn- make-node [parent-i i start n data]
+  "Create a node in the adtree. A node contains a vary vector, whose elements
+  have pointers to other nodes.
+
+  Count is the number of records it contains."
   {:index       i
    :value       -1
    :count       n
@@ -37,6 +45,10 @@
    :n-record  (:n-record data)
    :root-node (make-node -1 -1 0 (:n-record data)
                 (data/sort data 0 (:n-record data) 0))})
+
+;
+; get-count
+;
 
 (defn- drop-one [i coll]
   "Returns `coll` with the element at index `i` removed."
@@ -66,36 +78,36 @@
             {query-value :value} (nth queries query-index)
             vary-index           (- query-index (:index node) 1)
             vary                 (nth (:vary-vector node) vary-index)]
-        (condp = query-value
-          (:most-common-value vary)
-            (let [super-query-vector
-                    (drop-one q query-vector)
-                  super-count
-                    (get-count adtree queries super-query-vector)
-                  inverted-queries
-                    (update-in queries [query-index :value] swap-bit)
-                  invert-count
-                    ; this call will end up in one of the two cases below
-                    (get-count-helper node q inverted-queries query-vector
-                      last-query-index adtree)
-                  diff
-                    (- super-count invert-count)]
-              (if (<= diff 0)
-                (do
-                  (println "error: super count <= invert count, circumventing")
-                  1)
-                diff))
-          0
-            (get-count-helper (:zero-node vary) (inc q) queries query-vector
-              last-query-index adtree)
-          1
-            (get-count-helper (:one-node vary) (inc q) queries query-vector
-              last-query-index adtree)
-          ; QUERY_VALUE_WILDCARD
-            (throw (Exception. (str "unrecognized query value " query-value)))))))
+        (if (= query-value (:most-common-value vary))
+          (let [super-query-vector
+                  (drop-one q query-vector)
+                super-count
+                  (get-count adtree queries super-query-vector)
+                inverted-queries
+                  (update-in queries [query-index :value] swap-bit)
+                invert-count
+                  ; this call will end up in the else branch below
+                  (get-count-helper node q inverted-queries query-vector
+                    last-query-index adtree)
+                diff
+                  (- super-count invert-count)]
+            (if (<= diff 0)
+              (do
+                (println "error: super count <= invert count, circumventing")
+                1)
+              diff))
+          (case query-value
+            0
+              (get-count-helper (:zero-node vary) (inc q) queries query-vector
+                last-query-index adtree)
+            1
+              (get-count-helper (:one-node vary) (inc q) queries query-vector
+                last-query-index adtree)
+            ; QUERY_VALUE_WILDCARD
+              (throw (Exception. (str "unrecognized query value " query-value))))))))
 
 (defn get-count [adtree queries query-vector]
-  "TODO"
+  "Get count of (root node of) adtree."
   (let [last-query-index (or (last query-vector) -1)]
     (get-count-helper (:root-node adtree) 0 queries query-vector
       last-query-index adtree)))
