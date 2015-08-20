@@ -5,17 +5,6 @@
 
 (def ^:const DATA_PRECISION 100)
 
-(defn alloc [n-var n-record]
-  "Allocate data structure.
-
-  In the C version, this allocates :records to the right length, in Clojure
-  we don't care."
-  {:n-var    n-var
-   :n-record n-record
-   ; records is a list mapping each record id to a record, which is a list of 0s
-   ; and 1s of length n-var (see generate)
-   :records  []})
-
 (defn- get-record [data id]
   "Get record with index `id` from `data`."
   (nth (:records data) id))
@@ -44,14 +33,20 @@
     coll
     (conj coll x)))
 
-(defn generate [data max-num-parent percent-parent]
-  "Generate data, returns `{:data data :net net}`.
+(defn generate [params]
+  "Allocate and generate data, returns `{:data data :net net}`.
+
+  This replaces the C version's allocate and generate functions.
 
   As opposed to the C version, this doesn't take a seed."
-  (let [; Generate random Bayesian network
+  (let [n-var          (:var params)
+        n-record       (:record params)
+        max-num-parent (:number params)
+        percent-parent (:percent params)
+        ; Generate random Bayesian network
         net
           (net/generate-random-edges
-            (net/alloc (:n-var data)) max-num-parent percent-parent)
+            (net/alloc n-var) max-num-parent percent-parent)
         ; Create a threshold for each of the possible permutations of variable
         ; value instances
         ; In the C version, this is a 2D array variable -> bitmap -> (random)
@@ -59,7 +54,7 @@
         ; permutations of the bitmap are iterated through. So, given a variable
         ; and an on/off state for each of its parents, this returns an integer.
         thresholds
-          (for [v (range (:n-var data))]
+          (for [v (range n-var)]
             (for [t (range (math/expt 2 (count (net/get-parent-id-list net v))))]
               (rand-int (inc DATA_PRECISION))))
         ; Create variable dependency ordering for record generation.
@@ -72,7 +67,7 @@
                  ; order of node ids
                  order   []
                  ; nodes that have been visited
-                 done    (bitmap/create (:n-var data))]
+                 done    (bitmap/create n-var)]
             (if (nil? id)
               order ; bitmap/find-clear found no more nodes
               (if (not= (count (net/get-child-id-list net id)) 0)
@@ -99,8 +94,10 @@
                   (recur (bitmap/find-clear done (inc id))
                     updated-order updated-done)))))
         ; Create records
+        ; records is a list mapping each record id to a record, which is a list
+        ; of 0s and 1s of length n-var
         records
-          (for [r (range (:n-record data))]
+          (for [r (range n-record)]
             (reduce
               (fn [record o]
                 (let [id (nth order o)
@@ -118,10 +115,10 @@
                   (if (< rnd threshold)
                     (assoc record id 1)
                     (assoc record id 0))))
-              (vec (repeat (:n-var data) 0))
-              (range (:n-var data))))]
+              (vec (repeat n-var 0))
+              (range n-var)))]
     ; Return
-    {:data (assoc data :records records) :net net}))
+    {:data {:n-var n-var :n-record n-record :records records} :net net}))
 
 (defn- compare-record [a b offset]
   "Compare records `a` and `b` by a lexicographic order on its columns starting

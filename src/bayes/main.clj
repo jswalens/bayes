@@ -78,33 +78,24 @@ Options:                                         (defaults)
     ; Generate data
     (println "Generating data...")
     (set-rand-seed (:seed params))
-    (let [{data :data net :net}
-            (data/generate
-              (data/alloc (:var params) (:record params))
-              (:number params)
-              (:percent params))
+    (let [{data :data net :net} (data/generate params)
           _ (println "done.")
           ; Generate adtree
           _ (println "Generating adtree...")
-          adtree
-            (time (adtree/make data))
+          adtree (time (adtree/make data))
           _ (println "done.")
           ; Score original network
-          actual-score
-            (score net adtree params)
+          actual-score (score net adtree params)
           _ (println "actual score:" actual-score)
           ; Learn structure of Bayesian network
           _ (println "Learning structure...")
-          learner
-            (learner/alloc adtree params)
+          learner (learner/alloc adtree params)
           _ (time (learner/run learner))
           _ (println "done.")
           ; Check solution
-          ;status
-          ;  (net/is-cycle? (:net learner))
+          ;status (net/is-cycle? (:net learner))
           ;_ (when-not status (println "ERROR: solution is incorrect"))
-          ;learn-score
-          ;  (learner/score learner)
+          ;learn-score (learner/score learner)
           ;_ (println "Learn score  =" learn-score)
           ;_ (println "Actual score =" actual-score)
           ]
