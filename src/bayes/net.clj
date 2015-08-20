@@ -70,7 +70,7 @@
 (defn- concat-uniq [xs ys]
   "Concat `xs` and `ys`, but do not add elements in `ys` that are already in
   `xs`."
-  (concat xs (filter #(.contains xs %) ys)))
+  (concat xs (filter #(not (.contains xs %)) ys)))
 
 (defn find-descendants [net id]
   "Returns set of descendants of the node `id` in `net`."
