@@ -67,10 +67,23 @@
                 (get-child-id-list net id)))
             (conj visited id)))))))
 
+(defn- concat-without-dups [xs ys]
+  "Concat `xs` and `ys`, but do not add elements in `ys` that are already in
+  `xs`."
+  (concat xs (filter #(.contains xs %) ys)))
+
 (defn find-descendants [net id]
-  "TODO"
-  ; TODO: maybe set instead of bitmap? see learner/find-best-insert-task
-  (bitmap/create (count net)))
+  "Returns set of descendants of the node `id` in `net`."
+  (loop [descendants (into #{} (get-child-id-list net id))
+         queue       (into []  (get-child-id-list net id))]
+    (if (empty? queue)
+      descendants
+      (let [child-id (peek queue)]
+        (if (= child-id id)
+          (println "error: could not find descendants")
+          (recur
+            (into descendants (get-child-id-list net child-id))
+            (concat-without-dups (pop queue) (get-child-id-list net child-id))))))))
 
 (defn generate-random-edges [net max-num-parent percent-parent]
   "Extends `net` with random edges, maximally `max-num-parent` for each node

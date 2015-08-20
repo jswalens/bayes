@@ -300,15 +300,11 @@
                 (<= (count parent-id-list) global_max-num-edge-learned))
           (let [old-local-log-likelihood
                   (nth @(:local-base-log-likelihoods learner) to-id)
-                invalid-bitmap
-                  (net/find-descendants net to-id)
-                invalid-bitmap-2
-                  (reduce (fn [invalid parent-id] (bitmap/set invalid parent-id))
-                    invalid-bitmap parent-id-list)
-                ; TODO: maybe set instead of bitmap?
+                invalid-ids
+                  (into (net/find-descendants net to-id) parent-id-list)
                 parent-local-log-likelihoods
                   (for [from-id parent-id-list
-                        :when (not (bitmap/is-set? invalid-bitmap-2 from-id))
+                        :when (not (.contains invalid-ids from-id))
                         :when (not= from-id to-id)]
                     (let [local-log-likelihood
                             (compute-local-log-likelihood
