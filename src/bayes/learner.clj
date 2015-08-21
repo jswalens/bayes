@@ -85,14 +85,12 @@
 ; means that whenever we want to retrieve a query from a (parent-)query-vector,
 ; we have an extra bit of indirection.
 
-; XXX: queries argument not needed!
-(defn- populate-parent-query-vector [net id queries]
+(defn- populate-parent-query-vector [net id]
   (net/get-parent-ids net id))
 
-; XXX: queries argument not needed! (compare with C version)
-(defn- populate-query-vectors [net id queries]
-  (let [parent-query-vector (populate-parent-query-vector net id queries)
-        query-vector        (sort-queries (conj parent-query-vector id))] ; XXX what does sort-queries do here?
+(defn- populate-query-vectors [net id]
+  (let [parent-query-vector (populate-parent-query-vector net id)
+        query-vector        (sort (conj parent-query-vector id))]
     [query-vector parent-query-vector]))
 
 ;
@@ -147,7 +145,7 @@
             (map
               (fn [v]
                 (let [[query-vector parent-query-vector]
-                        (populate-query-vectors (:net learner) v queries)]
+                        (populate-query-vectors (:net learner) v)]
                   (compute-local-log-likelihood
                     v
                     (:adtree learner)
@@ -305,7 +303,7 @@
                         {:index v :value QUERY_VALUE_WILDCARD}))]
           (dosync
             (let [[query-vector parent-query-vector]
-                    (populate-query-vectors net to queries)
+                    (populate-query-vectors net to)
                   new-base-log-likelihood
                     (compute-local-log-likelihood to adtree
                       queries query-vector parent-query-vector)
@@ -321,13 +319,11 @@
 
 (defn- find-best-insert-task [learner to-id n-total-parent base-penalty base-log-likelihood]
   "TODO, returns task."
-  (let [net (:net learner)
-        queries (for [v (range (:n-var (:adtree learner)))]
-                  {:index v :value QUERY_VALUE_WILDCARD})]
+  (let [net (:net learner)]
     (dosync
       (let [; Create query-vector and parent-query-vector
             ; TODO: why is this in the tx?
-            parent-query-vector (populate-parent-query-vector net to-id queries)
+            parent-query-vector (populate-parent-query-vector net to-id)
             query-vector        (conj parent-query-vector to-id)
             ; Search all possible valid operations for better local log likelihood
             parent-ids           (net/get-parent-ids net to-id)
@@ -338,6 +334,8 @@
                   (nth @(:local-base-log-likelihoods learner) to-id)
                 invalid-ids
                   (into (net/find-descendants net to-id) parent-ids)
+                queries (for [v (range (:n-var (:adtree learner)))]
+                          {:index v :value QUERY_VALUE_WILDCARD})
                 parent-local-log-likelihoods
                   (for [from-id parent-ids
                         :when (not (.contains invalid-ids from-id))
@@ -348,8 +346,8 @@
                               (:adtree learner)
                               net
                               queries
-                              (sort-queries (conj query-vector (nth queries from-id)))
-                              (sort-queries (conj parent-query-vector (nth queries from-id))))]
+                              (sort-queries (conj query-vector from-id))
+                              (sort-queries (conj parent-query-vector from-id)))]
                       {:from-id from-id
                        :local-log-likelihood local-log-likelihood}))
                 {best-from-id :from-id best-local-log-likelihood :local-log-likelihood}
