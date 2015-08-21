@@ -85,12 +85,14 @@
 ; means that whenever we want to retrieve a query from a (parent-)query-vector,
 ; we have an extra bit of indirection.
 
+; XXX: queries argument not needed!
 (defn- populate-parent-query-vector [net id queries]
   (net/get-parent-ids net id))
 
+; XXX: queries argument not needed! (compare with C version)
 (defn- populate-query-vectors [net id queries]
   (let [parent-query-vector (populate-parent-query-vector net id queries)
-        query-vector        (sort-queries (conj parent-query-vector id))]
+        query-vector        (sort-queries (conj parent-query-vector id))] ; XXX what does sort-queries do here?
     [query-vector parent-query-vector]))
 
 ;
