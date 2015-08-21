@@ -22,10 +22,6 @@
     (is (= {:op 3 :score 3} (@#'bayes.learner/pop-task tasks)))
     (is (= [{:op 1 :score 1} {:op 2 :score 2}] @tasks))))
 
-(deftest sort-queries
-  (is (= [{:index 0 :value 10} {:index 1 :value 11}]
-    (@#'bayes.learner/sort-queries [{:index 1 :value 11} {:index 0 :value 10}]))))
-
 (deftest set-query-value
   (is (= [{:index 0 :value 10} {:index 1 :value 21} {:index 2 :value 12}]
     (@#'bayes.learner/set-query-value
@@ -46,7 +42,7 @@
     (net/insert-edge 2 1)))
 
 (deftest populate-parent-query-vector
-  (are [net id pqv] (= pqv (@#'bayes.learner/populate-parent-query-vector net id []))
+  (are [net id pqv] (= pqv (@#'bayes.learner/populate-parent-query-vector net id))
     linear-net 0  (list)
     linear-net 1  (list 0)
     linear-net 2  (list 1)
@@ -55,10 +51,10 @@
     central-net 2 (list)))
 
 (deftest populate-query-vectors
-  (are [net id pqv qv] (= [qv pqv] (@#'bayes.learner/populate-query-vectors net id []))
+  (are [net id pqv qv] (= [qv pqv] (@#'bayes.learner/populate-query-vectors net id))
     linear-net 0  (list)     (list 0)
-    linear-net 1  (list 0)   (list 1 0)
-    linear-net 2  (list 1)   (list 2 1)
+    linear-net 1  (list 0)   (list 0 1)
+    linear-net 2  (list 1)   (list 1 2)
     central-net 0 (list)     (list 0)
-    central-net 1 (list 0 2) (list 1 0 2)
+    central-net 1 (list 0 2) (list 0 1 2)
     central-net 2 (list)     (list 2)))
