@@ -1,6 +1,8 @@
 (ns bayes.data-test
   (:require [clojure.test :refer :all]
-            [bayes.data]))
+            [random]
+            [bayes.main :as main]
+            [bayes.data :as data]))
 
 ; Note: @#'bayes.data/bits->bitmap is a trick to get the private function
 ; bits->bitmap.
@@ -22,6 +24,19 @@
     [1 2 3] [1 3 3] [1 2 3]
     []      [4 5 6] [4 5 6]
     [1 2 3] []      [1 2 3]))
+
+(def generated-data
+  {:data {:n-var 3
+          :n-record 4
+          :records '([1 0 0] [1 0 1] [0 0 0] [0 1 0])}
+   :net  [{:id 0 :parent-ids '()  :child-ids '()}
+          {:id 1 :parent-ids '(2) :child-ids '()}
+          {:id 2 :parent-ids '()  :child-ids '(1)}]})
+
+(deftest generate
+  (let [params (assoc main/default-params :record 4 :var 3)]
+    (random/set-seed 1)
+    (is (= generated-data (data/generate params)))))
 
 (deftest compare-record
   (are [a b offset expected] (= expected (@#'bayes.data/compare-record a b offset))
