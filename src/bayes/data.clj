@@ -131,12 +131,11 @@
         (compare-record a b (inc offset)))
       c)))
 
-(defn- sort-records [data start n offset]
-  "Sort records with id `start` to `start + n` in `data`, based on values in
+(defn- sort-records [records start n offset]
+  "Sort records with id `start` to `start + n` in `records`, based on values in
   their columns at index `offset` and later. Returns sorted records (embedded
   in all records)."
-  (let [records (:records data)
-        p1 (take start records)          ; 0 -> start-1
+  (let [p1 (take start records)          ; 0 -> start-1
         p2 (take n (drop start records)) ; start -> start+n-1
         p3 (drop (+ start n) records)]   ; start+n -> end
     (concat
@@ -147,7 +146,7 @@
 (defn sort [data start n offset]
   "Sort records with id `start` to `start + n` in `data`, based on values in
   their columns at index `offset` and later. Returns updated data."
-  (assoc data :records (sort-records data start n offset)))
+  (assoc data :records (sort-records (:records data) start n offset)))
 
 ;
 ; find-split
