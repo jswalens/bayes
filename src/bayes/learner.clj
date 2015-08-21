@@ -67,10 +67,6 @@
 
 (def ^:const QUERY_VALUE_WILDCARD -1)
 
-(defn- sort-queries [queries]
-  "Sort a list of queries by their index."
-  (sort-by :index queries))
-
 (defn- set-query-value [queries index value]
   "Set value of query at `index` in `queries` to `value`."
   (assoc-in queries [index :value] value))
@@ -346,8 +342,8 @@
                               (:adtree learner)
                               net
                               queries
-                              (sort-queries (conj query-vector from-id))
-                              (sort-queries (conj parent-query-vector from-id)))]
+                              (sort (conj query-vector from-id))
+                              (sort (conj parent-query-vector from-id)))]
                       {:from-id from-id
                        :local-log-likelihood local-log-likelihood}))
                 {best-from-id :from-id best-local-log-likelihood :local-log-likelihood}
