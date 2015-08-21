@@ -39,17 +39,25 @@
     [0 0 0] [1 0 0] 1 0
     [0 0 0] [1 0 0] 2 0))
 
+(def sort-cases
+  [; records              start n offset  result
+   [[[0 1] [1 1] [1 0] [0 0]] 0 4 0 (list [0 0] [0 1] [1 0] [1 1])]
+   ; change offset:
+   [[[0 1] [1 1] [1 0] [0 0]] 0 4 1 (list [1 0] [0 0] [0 1] [1 1])]
+   ; change start (records 1, 2, 3):
+   [[[0 1] [1 1] [1 0] [0 0]] 1 3 0 (list [0 1] [0 0] [1 0] [1 1])]
+   ; change n (records 0, 1):
+   [[[0 1] [1 1] [1 0] [0 0]] 0 2 0 (list [0 1] [1 1] [1 0] [0 0])]
+   ; change start and n (records 1, 2):
+   [[[0 1] [1 1] [1 0] [0 0]] 1 2 0 (list [0 1] [1 0] [1 1] [0 0])]
+   ; change start, n (records 1, 2), and offset:
+   [[[0 1] [0 1] [1 0] [0 0]] 1 2 1 (list [0 1] [1 0] [0 1] [0 0])]])
+
 (deftest sort-records
-  (are [records start n offset expected]
-    (= expected (@#'bayes.data/sort-records records start n offset))
-    [[0 1] [1 1] [1 0] [0 0]] 0 4 0 (list [0 0] [0 1] [1 0] [1 1])
-    ; change offset:
-    [[0 1] [1 1] [1 0] [0 0]] 0 4 1 (list [1 0] [0 0] [0 1] [1 1])
-    ; change start (records 1, 2, 3):
-    [[0 1] [1 1] [1 0] [0 0]] 1 3 0 (list [0 1] [0 0] [1 0] [1 1])
-    ; change n (records 0, 1):
-    [[0 1] [1 1] [1 0] [0 0]] 0 2 0 (list [0 1] [1 1] [1 0] [0 0])
-    ; change start and n (records 1, 2):
-    [[0 1] [1 1] [1 0] [0 0]] 1 2 0 (list [0 1] [1 0] [1 1] [0 0])
-    ; change start, n (records 1, 2), and offset:
-    [[0 1] [0 1] [1 0] [0 0]] 1 2 1 (list [0 1] [1 0] [0 1] [0 0])))
+  (doseq [[records start n offset result] sort-cases]
+    (is (= result (@#'bayes.data/sort-records records start n offset)))))
+
+(deftest sort-test
+  (doseq [[records start n offset result] sort-cases]
+    (is (= {:n-var 2 :n-record 4 :records result}
+      (bayes.data/sort {:n-var 2 :n-record 4 :records records} start n offset)))))
