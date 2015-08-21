@@ -47,7 +47,7 @@
 
 (defn reverse-edge [net from-id to-id]
   "Returns `net` with the edge from `from-id` to `to-id` reversed."
-  (insert-edge (remove-edge from-id to-id) to-id from-id))
+  (insert-edge (remove-edge net from-id to-id) to-id from-id))
 
 ;
 ; has-edge? and has-path?

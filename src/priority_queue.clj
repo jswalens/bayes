@@ -11,4 +11,4 @@
 
 (defn remove [queue val]
   "Remove `val` from `queue`."
-  (remove #(= % val) queue))
+  (clojure.core/remove #(= % val) queue))
