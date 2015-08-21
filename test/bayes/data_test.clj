@@ -1,6 +1,6 @@
 (ns bayes.data-test
   (:require [clojure.test :refer :all]
-            [bayes.data :refer :all]))
+            [bayes.data]))
 
 ; Note: @#'bayes.data/bits->bitmap is a trick to get the private function
 ; bits->bitmap.
@@ -57,7 +57,21 @@
   (doseq [[records start n offset result] sort-cases]
     (is (= result (@#'bayes.data/sort-records records start n offset)))))
 
-(deftest sort-test
+(deftest sort
   (doseq [[records start n offset result] sort-cases]
     (is (= {:n-var 2 :n-record 4 :records result}
       (bayes.data/sort {:n-var 2 :n-record 4 :records records} start n offset)))))
+
+(deftest find-split
+  (are [data start n offset expected] (= expected (bayes.data/find-split data start n offset))
+    {:records [[0 0] [0 1] [1 0] [1 1]]} 0 4 0  2 ; first two start with 0, next two start with 1
+    ; change offset:
+    {:records [[1 0] [0 0] [0 1] [1 1]]} 0 4 1  2 ; first two have 0, next two have 1, at offset 1
+    ; change start (records 1, 2, 3):
+    {:records [[0 1] [0 0] [1 0] [1 1]]} 1 3 0  1 ; first one start with 0, next two start with 1
+    ; change n (records 0, 1):
+    {:records [[0 1] [1 1] [1 0] [0 0]]} 0 2 0  1 ; first one starts with 0, next one starts with 1
+    ; change start and n (records 1, 2):
+    {:records [[0 1] [1 0] [1 1] [0 0]]} 1 2 0  0 ; none start with zero, two start with 1
+    ; change start, n (records 1, 2), and offset:
+    {:records [[0 1] [1 0] [0 1] [0 0]]} 1 2 1  1)) ; first one has zero, next one has 1, at offset 1
