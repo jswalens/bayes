@@ -12,7 +12,7 @@
   We have an extra parameter params to get some globals.
 
   The C version has tasks, an array containing tasks, and taskList, an ordered
-  list of pointers to tasks (ordered by compareTask). We only have tasks, as an
+  list of pointers to tasks (ordered by score). We only have tasks, as an
   ordered list of tasks.
 
   In the C version, parts of this struct are aligned to cache lines. We don't
@@ -21,7 +21,7 @@
    :net                        (net/alloc (:n-var adtree))
    :local-base-log-likelihoods (ref (vec (repeat (:n-var adtree) 0.0)))
    :base-log-likelihood        (ref 0.0)
-   :tasks                      (ref []) ; sorted by compareTask
+   :tasks                      (ref []) ; sorted by score
    :n-total-parent             (ref 0)
    :n-thread                   (:thread params)
    :max-num-edge-learned       (:edge params)
