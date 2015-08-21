@@ -1,6 +1,6 @@
 (ns random)
 
-(def rng (new java.util.Random))
+(def rng (new java.util.Random 1))
 
 (defn set-seed [seed]
   "Set seed of random number generator."
