@@ -1,5 +1,6 @@
 (ns bayes.learner-test
   (:require [clojure.test :refer :all]
+            [bayes.adtree :as adtree]
             [bayes.net :as net]
             [bayes.learner :as learner]))
 
@@ -58,3 +59,37 @@
     central-net 0 (list)     (list 0)
     central-net 1 (list 0 2) (list 0 1 2)
     central-net 2 (list)     (list 2)))
+
+(def example-data
+  {:n-var 3
+   :n-record 4
+   :records '([1 0 0] [1 0 1] [0 0 0] [0 1 0])})
+
+(def example-net
+  [{:id 0 :parent-ids '()  :child-ids '()}
+   {:id 1 :parent-ids '(2) :child-ids '()}
+   {:id 2 :parent-ids '()  :child-ids '(1)}])
+
+(def example-adtree
+  (adtree/make example-data))
+
+(deftest compute-specific-local-log-likelihood
+  ; TODO: don't know where these numbers come from
+  (is (= -0.34657359027997264
+    (@#'bayes.learner/compute-specific-local-log-likelihood
+      example-adtree
+      [{:index 0 :value 0} {:index 1 :value 1} {:index 2 :value 1}]
+      (list 0)
+      (list))))
+  (is (= -0.17328679513998632
+    (@#'bayes.learner/compute-specific-local-log-likelihood
+      example-adtree
+      [{:index 0 :value 0} {:index 1 :value 1} {:index 2 :value 1}]
+      (list 0 1)
+      (list 0))))
+  (is (= 0.0
+    (@#'bayes.learner/compute-specific-local-log-likelihood
+      example-adtree
+      [{:index 0 :value 0} {:index 1 :value 1} {:index 2 :value 1}]
+      (list 1 2)
+      (list 1)))))
