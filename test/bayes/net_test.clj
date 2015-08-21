@@ -38,3 +38,15 @@
 (deftest reverse-edge
   (is (= central-net (net/reverse-edge linear-net 1 2)))
   (is (= linear-net (net/reverse-edge central-net 2 1))))
+
+(deftest has-edge?
+  (is (net/has-edge? linear-net 0 1))
+  (is (net/has-edge? linear-net 1 2))
+  (is (not (net/has-edge? linear-net 0 2))))
+
+(deftest has-path?
+  (is (net/has-path? linear-net 0 1))
+  (is (net/has-path? linear-net 1 2))
+  (is (net/has-path? linear-net 0 2))
+  (is (not (net/has-path? linear-net 2 0)))
+  (is (not (net/has-path? central-net 0 2))))
