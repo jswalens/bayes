@@ -50,3 +50,19 @@
   (is (net/has-path? linear-net 0 2))
   (is (not (net/has-path? linear-net 2 0)))
   (is (not (net/has-path? central-net 0 2))))
+
+(deftest concat-uniq
+  (are [xs ys expected] (= expected (@#'bayes.net/concat-uniq xs ys))
+    [1 2 3] [4 5 6] [1 2 3 4 5 6]
+    [1 2 3] [1 5 6] [1 2 3 5 6]
+    [1 2 3] [1 3 3] [1 2 3]
+    []      [4 5 6] [4 5 6]
+    [1 2 3] []      [1 2 3]))
+
+(deftest find-descendants
+  (is (= #{1 2} (net/find-descendants linear-net 0)))
+  (is (= #{2}   (net/find-descendants linear-net 1)))
+  (is (= #{}    (net/find-descendants linear-net 2)))
+  (is (= #{1}   (net/find-descendants central-net 0)))
+  (is (= #{}    (net/find-descendants central-net 1)))
+  (is (= #{1}   (net/find-descendants central-net 2))))

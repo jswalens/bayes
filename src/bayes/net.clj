@@ -93,7 +93,7 @@
             "is a descendant of itself (net contains a cycle)")
           (recur
             (into descendants (get-child-ids net child-id))
-            (concat-uniq (pop queue) (get-child-ids net child-id))))))))
+            (vec (concat-uniq (pop queue) (get-child-ids net child-id)))))))))
 
 ;
 ; generate-random-edges
