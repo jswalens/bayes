@@ -11,3 +11,7 @@
     [0 1 2] 2 [0 1]
     [0 1 2] 3 [0 1 2]
     []      0 []))
+
+(deftest swap-bit
+  (is (= 0 (@#'bayes.adtree/swap-bit 1)))
+  (is (= 1 (@#'bayes.adtree/swap-bit 0))))
