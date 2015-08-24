@@ -180,6 +180,7 @@
   (learner/alloc example-adtree example-params))
 
 (deftest score
+  ; Note: results have been verified against C version.
   ; Simple data: records all "2"
   (let [data    {:n-var 3
                  :n-record 4
@@ -201,5 +202,5 @@
         adtree  (adtree/make data)
         learner (learner/alloc adtree example-params)]
     (is (almost= -8.317766 (learner/score learner))))
-  ; TODO: is this correct, does this make sense?
-  (is (almost= -7.271269879190247 (learner/score example-learner))))
+  ; example-learner from above
+  (is (almost= -7.271270 (learner/score example-learner))))
