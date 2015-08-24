@@ -117,28 +117,22 @@
   (is (= 1 (@#'bayes.adtree/swap-bit 0))))
 
 (deftest get-count
-  ; TODO: I don't know whether these are the expected results
-  (is (= 2 (adtree/get-count example-adtree-2
+  ; These results have been verified against the C version.
+  (is (= 2 (adtree/get-count example-adtree-3
     [{:index 0 :value 0}]
     [0])))
-  (is (= 2 (adtree/get-count example-adtree-2
+  (is (= 2 (adtree/get-count example-adtree-3
     [{:index 0 :value 1}]
     [0])))
-  (is (= 2 (adtree/get-count example-adtree-2
-    [{:index 0 :value 0} {:index 1 :value 1}]
-    [0])))
-  (is (= 2 (adtree/get-count example-adtree-2
-    [{:index 0 :value 0} {:index 1 :value 1}]
-    [1])))
-  (is (= 2 (adtree/get-count example-adtree-2
-    [{:index 0 :value 1} {:index 1 :value 1}]
-    [0])))
-  (is (= 2 (adtree/get-count example-adtree-2
-    [{:index 0 :value 1} {:index 1 :value 1}]
-    [1])))
-  (is (= 1 (adtree/get-count example-adtree-2
-    [{:index 0 :value 0} {:index 1 :value 1}]
+  (is (= 1 (adtree/get-count example-adtree-3
+    [{:index 0 :value 0} {:index 0 :value 0}]
     [0 1])))
-  (is (= 4 (adtree/get-count example-adtree-2
-    [{:index 0 :value 0} {:index 1 :value 1}]
-    []))))
+  (is (= 1 (adtree/get-count example-adtree-3
+    [{:index 0 :value 0} {:index 0 :value 1}]
+    [0 1])))
+  (is (= 2 (adtree/get-count example-adtree-3
+    [{:index 0 :value 1} {:index 0 :value 0}]
+    [0 1])))
+  (is (= 0 (adtree/get-count example-adtree-3
+    [{:index 0 :value 1} {:index 0 :value 1}]
+    [0 1]))))
