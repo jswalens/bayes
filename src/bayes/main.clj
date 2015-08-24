@@ -7,7 +7,7 @@
             [taoensso.timbre.profiling :refer [profile]]))
 
 (def default-params
-  {:edge    1
+  {:edge    -1   ; -1 means no limit
    :insert  1
    :number  4
    :percent 10
@@ -25,7 +25,7 @@
 
 Options:                                         (defaults)
 
-    e <UINT>   Max [e]dges learned per variable  (1)
+    e <UINT>   Max [e]dges learned per variable  (-1)
     i <UINT>   Edge [i]nsert penalty             (1)
     n <UINT>   Max [n]umber of parents           (4)
     p <UINT>   [p]ercent chance of parent        (10)
