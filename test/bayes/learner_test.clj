@@ -159,3 +159,22 @@
       [{:index 0 :value 0} {:index 1 :value 1} {:index 2 :value 1}]
       (list 1 2)
       (list 1)))))
+
+(deftest sum
+  (are [xs sum] (= sum (@#'bayes.learner/sum xs))
+    [1 2 3]          6
+    [0 1 2 7 3 28 3] 44
+    []               0))
+
+(def example-params
+  {:thread  1
+   :edge    1
+   :insert  1
+   :quality 1.0})
+
+(def example-learner
+  (learner/alloc example-adtree example-params))
+
+(deftest score
+  ; TODO: is this correct, does this make sense?
+  (is (= -7.271269879190247 (learner/score example-learner))))
