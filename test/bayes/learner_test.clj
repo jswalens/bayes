@@ -4,6 +4,10 @@
             [bayes.net :as net]
             [bayes.learner :as learner]))
 
+(defn almost= [a b]
+  "Is the difference between `a` and `b` smaller than 0.00001?"
+  (< (Math/abs (- a b)) 0.00001))
+
 (deftest add-task
   (are [tasks task expected] (= expected (@#'bayes.learner/add-task tasks task))
     (ref [{:op 1 :score 1} {:op 3 :score 3}]) {:op 5 :score 5}
@@ -75,19 +79,19 @@
 
 (deftest compute-specific-local-log-likelihood
   ; TODO: don't know where these numbers come from
-  (is (= -0.34657359027997264
+  (is (almost= -0.34657359027997264
     (@#'bayes.learner/compute-specific-local-log-likelihood
       example-adtree
       [{:index 0 :value 0} {:index 1 :value 1} {:index 2 :value 1}]
       (list 0)
       (list))))
-  (is (= -0.17328679513998632
+  (is (almost= -0.17328679513998632
     (@#'bayes.learner/compute-specific-local-log-likelihood
       example-adtree
       [{:index 0 :value 0} {:index 1 :value 1} {:index 2 :value 1}]
       (list 0 1)
       (list 0))))
-  (is (= 0.0
+  (is (almost= 0.0
     (@#'bayes.learner/compute-specific-local-log-likelihood
       example-adtree
       [{:index 0 :value 0} {:index 1 :value 1} {:index 2 :value 1}]
@@ -96,63 +100,63 @@
 
 (deftest compute-local-log-likelihood
   ; TODO: don't know where these numbers come from
-  (is (= -0.6931471805599453
+  (is (almost= -0.6931471805599453
     (@#'bayes.learner/compute-local-log-likelihood
       0
       example-adtree
       [{:index 0 :value 0} {:index 1 :value 1} {:index 2 :value 1}]
       (list 0)
       (list))))
-  (is (= -0.34657359027997264
+  (is (almost= -0.34657359027997264
     (@#'bayes.learner/compute-local-log-likelihood
       0
       example-adtree
       [{:index 0 :value 0} {:index 1 :value 1} {:index 2 :value 1}]
       (list 0 1)
       (list 0))))
-  (is (= -0.5493061443340549
+  (is (almost= -0.5493061443340549
     (@#'bayes.learner/compute-local-log-likelihood
       0
       example-adtree
       [{:index 0 :value 0} {:index 1 :value 1} {:index 2 :value 1}]
       (list 1 2)
       (list 1))))
-  (is (= -0.6931471805599453
+  (is (almost= -0.6931471805599453
     (@#'bayes.learner/compute-local-log-likelihood
       1
       example-adtree
       [{:index 0 :value 0} {:index 1 :value 1} {:index 2 :value 1}]
       (list 0)
       (list))))
-  (is (= -0.34657359027997264
+  (is (almost= -0.34657359027997264
     (@#'bayes.learner/compute-local-log-likelihood
       1
       example-adtree
       [{:index 0 :value 0} {:index 1 :value 1} {:index 2 :value 1}]
       (list 0 1)
       (list 0))))
-  (is (= -0.5493061443340549
+  (is (almost= -0.5493061443340549
     (@#'bayes.learner/compute-local-log-likelihood
       1
       example-adtree
       [{:index 0 :value 0} {:index 1 :value 1} {:index 2 :value 1}]
       (list 1 2)
       (list 1))))
-  (is (= -0.6931471805599453
+  (is (almost= -0.6931471805599453
     (@#'bayes.learner/compute-local-log-likelihood
       2
       example-adtree
       [{:index 0 :value 0} {:index 1 :value 1} {:index 2 :value 1}]
       (list 0)
       (list))))
-  (is (= -0.34657359027997264
+  (is (almost= -0.34657359027997264
     (@#'bayes.learner/compute-local-log-likelihood
       2
       example-adtree
       [{:index 0 :value 0} {:index 1 :value 1} {:index 2 :value 1}]
       (list 0 1)
       (list 0))))
-  (is (= -0.4773856262211097  ; different than other id's
+  (is (almost= -0.4773856262211097  ; different than other id's
     (@#'bayes.learner/compute-local-log-likelihood
       2
       example-adtree
@@ -176,5 +180,26 @@
   (learner/alloc example-adtree example-params))
 
 (deftest score
+  ; Simple data: records all "2"
+  (let [data    {:n-var 3
+                 :n-record 4
+                 :records '([2 2 2] [2 2 2] [2 2 2] [2 2 2])}
+        adtree  (adtree/make data)
+        learner (learner/alloc adtree example-params)]
+    (is (almost= 0.0 (learner/score learner))))
+  ; Case 2
+  (let [data    {:n-var 3
+                 :n-record 4
+                 :records '([2 0 0] [2 0 1] [2 0 0] [2 0 1])}
+        adtree  (adtree/make data)
+        learner (learner/alloc adtree example-params)]
+    (is (almost= -2.772589 (learner/score learner))))
+  ; Case 3
+  (let [data    {:n-var 3
+                 :n-record 4
+                 :records '([0 1 0] [1 0 1] [0 1 0] [1 0 1])}
+        adtree  (adtree/make data)
+        learner (learner/alloc adtree example-params)]
+    (is (almost= -8.317766 (learner/score learner))))
   ; TODO: is this correct, does this make sense?
-  (is (= -7.271269879190247 (learner/score example-learner))))
+  (is (almost= -7.271269879190247 (learner/score example-learner))))
