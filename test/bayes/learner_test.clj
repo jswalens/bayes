@@ -176,9 +176,6 @@
    :insert  1
    :quality 1.0})
 
-(def example-learner
-  (learner/alloc example-adtree example-params))
-
 (deftest score
   ; Note: results have been verified against C version.
   ; Simple data: records all "2"
@@ -202,5 +199,37 @@
         adtree  (adtree/make data)
         learner (learner/alloc adtree example-params)]
     (is (almost= -8.317766 (learner/score learner))))
-  ; example-learner from above
-  (is (almost= -7.271270 (learner/score example-learner))))
+  ; example-adtree from above
+  (let [learner (learner/alloc example-adtree example-params)]
+    (is (almost= -7.271270 (learner/score learner)))))
+
+#_(deftest run
+  ; Note: results have been verified against C version.
+  ; Simple data: records all "2"
+  #_(let [data    {:n-var 3
+                 :n-record 4
+                 :records '([2 2 2] [2 2 2] [2 2 2] [2 2 2])}
+        adtree  (adtree/make data)
+        learner (learner/alloc adtree example-params)]
+    (learner/run learner)
+    (is (almost= ??? (learner/score learner))))
+  ; Case 2
+  #_(let [data    {:n-var 3
+                 :n-record 4
+                 :records '([2 0 0] [2 0 1] [2 0 0] [2 0 1])}
+        adtree  (adtree/make data)
+        learner (learner/alloc adtree example-params)]
+    (learner/run learner)
+    (is (almost= ??? (learner/score learner))))
+  ; Case 3
+  #_(let [data    {:n-var 3
+                 :n-record 4
+                 :records '([0 1 0] [1 0 1] [0 1 0] [1 0 1])}
+        adtree  (adtree/make data)
+        learner (learner/alloc adtree example-params)]
+    (learner/run learner)
+    (is (almost= ??? (learner/score learner))))
+  ; example-adtree from above
+  (let [learner (learner/alloc example-adtree example-params)]
+    (learner/run learner)
+    (is (almost= -6.931472 (learner/score learner)))))
