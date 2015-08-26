@@ -92,7 +92,7 @@
                     last-query-index adtree)
                 diff
                   (- super-count invert-count)]
-            (if (<= diff 0)
+            (if (< diff 0)
               (do
                 (println "ERROR: super count <= invert count, circumventing")
                 1)
