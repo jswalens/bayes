@@ -172,16 +172,16 @@
 (deftest get-count
   ; These results have been verified against the C version.
   (is (= 1 (adtree/get-count example-adtree-2
-    [{:index 0 :value 0} {:index 0 :value 0}]
+    [{:index 0 :value 0} {:index 1 :value 0}]
     [0 1])))
   (is (= 1 (adtree/get-count example-adtree-2
-    [{:index 0 :value 0} {:index 0 :value 1}]
+    [{:index 0 :value 0} {:index 1 :value 1}]
     [0 1])))
   (is (= 1 (adtree/get-count example-adtree-2
-    [{:index 0 :value 1} {:index 0 :value 0}]
+    [{:index 0 :value 1} {:index 1 :value 0}]
     [0 1])))
   (is (= 1 (adtree/get-count example-adtree-2
-    [{:index 0 :value 1} {:index 0 :value 1}]
+    [{:index 0 :value 1} {:index 1 :value 1}]
     [0 1])))
   (is (= 2 (adtree/get-count example-adtree-3
     [{:index 0 :value 0}]
@@ -190,18 +190,18 @@
     [{:index 0 :value 1}]
     [0])))
   (is (= 1 (adtree/get-count example-adtree-3
-    [{:index 0 :value 0} {:index 0 :value 0}]
+    [{:index 0 :value 0} {:index 1 :value 0}]
     [0 1])))
   (is (= 1 (adtree/get-count example-adtree-3
-    [{:index 0 :value 0} {:index 0 :value 1}]
+    [{:index 0 :value 0} {:index 1 :value 1}]
     [0 1])))
   (is (= 2 (adtree/get-count example-adtree-3
-    [{:index 0 :value 1} {:index 0 :value 0}]
+    [{:index 0 :value 1} {:index 1 :value 0}]
     [0 1])))
   (is (= 0 (adtree/get-count example-adtree-3
-    [{:index 0 :value 1} {:index 0 :value 1}]
+    [{:index 0 :value 1} {:index 1 :value 1}]
     [0 1])))
-  ; The following causes an error in the code (super count <= invert count)
+  ; The following caused an error in the code (super count <= invert count)
   (is (= 0 (adtree/get-count example-adtree-4
-    [{:index 0 :value 0} {:index 0 :value 1} {:index 0 :value 0}]
+    [{:index 0 :value 0} {:index 1 :value 1} {:index 2 :value 0}]
     [0 1 2]))))
