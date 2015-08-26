@@ -78,19 +78,20 @@
   (adtree/make example-data))
 
 (deftest compute-specific-local-log-likelihood
+  ; These values have been verified against the C version.
   (is (almost= -0.346574
     (@#'bayes.learner/compute-specific-local-log-likelihood
       example-adtree
       [{:index 0 :value 0}]
       (list 0)
       (list))))
-  (is (almost= -0.215762
+  (is (almost= -0.346574
     (@#'bayes.learner/compute-specific-local-log-likelihood
       example-adtree
       [{:index 0 :value 1}]
       (list 0)
       (list))))
-  (is (almost= -0.17328679513998632
+  (is (almost= -0.173287
     (@#'bayes.learner/compute-specific-local-log-likelihood
       example-adtree
       [{:index 0 :value 0} {:index 1 :value 1} {:index 2 :value 1}]
