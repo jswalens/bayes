@@ -118,6 +118,18 @@
 
 (deftest get-count
   ; These results have been verified against the C version.
+  (is (= 1 (adtree/get-count example-adtree-2
+    [{:index 0 :value 0} {:index 0 :value 0}]
+    [0 1])))
+  (is (= 1 (adtree/get-count example-adtree-2
+    [{:index 0 :value 0} {:index 0 :value 1}]
+    [0 1])))
+  (is (= 1 (adtree/get-count example-adtree-2
+    [{:index 0 :value 1} {:index 0 :value 0}]
+    [0 1])))
+  (is (= 1 (adtree/get-count example-adtree-2
+    [{:index 0 :value 1} {:index 0 :value 1}]
+    [0 1])))
   (is (= 2 (adtree/get-count example-adtree-3
     [{:index 0 :value 0}]
     [0])))
