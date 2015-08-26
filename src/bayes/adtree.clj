@@ -95,7 +95,7 @@
             (if (< diff 0)
               (do
                 (println "ERROR: super count <= invert count, circumventing")
-                1)
+                0)
               diff))
           (case query-value
             0
