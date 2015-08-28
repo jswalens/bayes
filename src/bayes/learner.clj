@@ -392,19 +392,19 @@
   (loop []
     (let [task (pop-task (:tasks learner))]
       (when (not (nil? task))
-        (let [valid?
-                (atom false)
-              updated-net
+        (let [net
+                (:net learner)
+              [valid? updated-net]
                 (dosync ; TODO: why is this in a transaction? -> nodes in net should be refs, or contain refs
                   ; Check if task is still valid
-                  (reset! valid? (is-task-valid? task (:net learner)))
-                  (if @valid?
+                  (if (is-task-valid? task net)
                     ; Perform task: update graph and probabilities
-                    (apply-task task (:net learner))))
+                    [true (apply-task task net)]
+                    [false net]))
               _ (println "task processed by thread" i ":" task
-                  (if @valid? "(valid)" "(invalid)"))
+                  (if valid? "(valid)" "(invalid)"))
               delta-log-likelihood
-                (if @valid?
+                (if valid?
                   (calculate-delta-log-likelihood task learner)
                   0.0)
               ; Update/read globals
@@ -413,7 +413,9 @@
                   [(alter (:base-log-likelihood learner) + delta-log-likelihood)
                    @(:n-total-parent learner)])
               ; Find next task
-              best-task (find-next-task learner n-total-parent base-log-likelihood (:to-id task))]
+              best-task
+                (find-next-task learner n-total-parent base-log-likelihood
+                  (:to-id task))]
           (when (not= (:to-id best-task) -1)
             (println "new task on thread" i ":" best-task)
             (add-task (:tasks learner) best-task)))
