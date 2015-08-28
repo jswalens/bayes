@@ -90,7 +90,7 @@
     [query-vector parent-query-vector]))
 
 ;
-; Functions to compute (specific) local log likelihood
+; Functions to compute (specific) local (base) log likelihood
 ;
 
 (defn- compute-specific-local-log-likelihood [adtree queries query-vector parent-query-vector]
@@ -116,6 +116,18 @@
        query-vector parent-query-vector)
      (compute-local-log-likelihood-helper 0 adtree (set-query-value queries id 1)
        query-vector parent-query-vector)))
+
+(defn- compute-local-base-log-likelihoods [vars adtree]
+  ; The C version has queries = [X, Y]; queryVector = [&X];
+  ; parentQuery = Z; and parentQueryVector = [].
+  ; In Clojure, we have queries = [X]; query-vector = [0];
+  ; parent-query-vector = []
+  (for [v vars]
+    (+
+      (compute-specific-local-log-likelihood adtree [{:index v :value 0}]
+        [0] [])
+      (compute-specific-local-log-likelihood adtree [{:index v :value 1}]
+        [0] []))))
 
 ;
 ; score
@@ -171,18 +183,6 @@
                 maximum
                 (min maximum (+ start chunk)))]
     (range start stop)))
-
-(defn- compute-local-base-log-likelihoods [vars adtree]
-  ; The C version has queries = [X, Y]; queryVector = [&X];
-  ; parentQuery = Z; and parentQueryVector = [].
-  ; In Clojure, we have queries = [X]; query-vector = [0];
-  ; parent-query-vector = []
-  (for [v vars]
-    (+
-      (compute-specific-local-log-likelihood adtree [{:index v :value 0}]
-        [0] [])
-      (compute-specific-local-log-likelihood adtree [{:index v :value 1}]
-        [0] []))))
 
 (defn- create-task [v adtree base-log-likelihood this-local-log-likelihood]
   "Create and return task for variable `v`, or nil if no better local log
