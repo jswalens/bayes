@@ -36,15 +36,17 @@
 
 (def linear-net
   "Net of three nodes with edges 0 -> 1 -> 2."
-  (-> (net/alloc 3)
-    (net/insert-edge 0 1)
-    (net/insert-edge 1 2)))
+  (dosync
+    (-> (net/alloc 3)
+      (net/insert-edge 0 1)
+      (net/insert-edge 1 2))))
 
 (def central-net
   "Net of three nodes with edges 0 -> 1 <- 2."
-  (-> (net/alloc 3)
-    (net/insert-edge 0 1)
-    (net/insert-edge 2 1)))
+  (dosync
+    (-> (net/alloc 3)
+      (net/insert-edge 0 1)
+      (net/insert-edge 2 1))))
 
 (deftest populate-parent-query-vector
   (are [net id pqv] (= pqv (@#'bayes.learner/populate-parent-query-vector net id))
@@ -70,9 +72,9 @@
    :records '([1 0 0] [1 0 1] [0 0 0] [0 1 0])})
 
 (def example-net
-  [{:id 0 :parent-ids '()  :child-ids '()}
-   {:id 1 :parent-ids '(2) :child-ids '()}
-   {:id 2 :parent-ids '()  :child-ids '(1)}])
+  [{:id 0 :parent-ids (ref '())  :child-ids (ref '())}
+   {:id 1 :parent-ids (ref '(2)) :child-ids (ref '())}
+   {:id 2 :parent-ids (ref '())  :child-ids (ref '(1))}])
 
 (def example-adtree
   (adtree/make example-data))

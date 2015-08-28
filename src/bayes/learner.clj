@@ -82,7 +82,9 @@
 ; we have an extra bit of indirection.
 
 (defn- populate-parent-query-vector [net id]
-  (net/get-parent-ids net id))
+  @(net/get-parent-ids net id))
+
+; TODO: are these called in transactions everywhere?
 
 (defn- populate-query-vectors [net id]
   (let [parent-query-vector (populate-parent-query-vector net id)
@@ -137,7 +139,7 @@
   "Sums `ns`."
   (reduce + ns))
 
-(defn score [learner]
+(defn score [learner] ; TODO: should be called in tx?
   (let [n-var
           (:n-var (:adtree learner))
         queries
@@ -146,7 +148,7 @@
         n-total-parent
           (sum
             (map
-              (fn [v] (count (net/get-parent-ids (:net learner) v)))
+              (fn [v] (count @(net/get-parent-ids (:net learner) v)))
               (range n-var)))
         log-likelihood
           (sum
@@ -326,7 +328,7 @@
             parent-query-vector (populate-parent-query-vector net to-id)
             query-vector        (conj parent-query-vector to-id)
             ; Search all possible valid operations for better local log likelihood
-            parent-ids           (net/get-parent-ids net to-id)
+            parent-ids           @(net/get-parent-ids net to-id)
             max-num-edge-learned (:max-num-edge-learned learner)]
         (if (or (< max-num-edge-learned 0)
                 (<= (count parent-ids) max-num-edge-learned))

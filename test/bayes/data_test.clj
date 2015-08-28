@@ -33,10 +33,18 @@
           {:id 1 :parent-ids '(2) :child-ids '()}
           {:id 2 :parent-ids '()  :child-ids '(1)}]})
 
+(defn- deref-net [net]
+  (for [n net]
+    (-> n
+      (update-in [:parent-ids] deref)
+      (update-in [:child-ids] deref))))
+
 (deftest generate
-  (let [params (assoc main/default-params :record 4 :var 3)]
-    (random/set-seed 1)
-    (is (= generated-data (data/generate params)))))
+  (random/set-seed 1)
+  (let [params (assoc main/default-params :record 4 :var 3)
+        {data :data net :net} (data/generate params)]
+    (is (= (:data generated-data) data))
+    (is (= (:net  generated-data) (deref-net net)))))
 
 (deftest compare-record
   (are [a b offset expected] (= expected (@#'bayes.data/compare-record a b offset))
