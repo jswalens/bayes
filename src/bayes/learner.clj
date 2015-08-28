@@ -289,28 +289,29 @@
 (defn- calculate-delta-log-likelihood [task learner]
   "Returns delta-log-likelihood, and sets the local-base-log-likelihoods and
   n-total-parent of the learner."
-  (let [net    (:net learner)
-        adtree (:adtree learner)
+  (let [adtree (:adtree learner)
         to     (:to-id task)
         local-base-log-likelihoods (:local-base-log-likelihoods learner)]
     (case (:op task)
       :insert
-        (let [queries (vec (for [v (range (:n-var adtree))]
-                        {:index v :value QUERY_VALUE_WILDCARD}))]
-          (dosync
-            (let [[query-vector parent-query-vector]
-                    (populate-query-vectors net to)
-                  new-base-log-likelihood
-                    (compute-local-log-likelihood to adtree
-                      queries query-vector parent-query-vector)
-                  to-local-base-log-likelihood
-                    (nth @local-base-log-likelihoods to)
-                  delta-log-likelihood
-                    (- to-local-base-log-likelihood new-base-log-likelihood)]
-              (alter local-base-log-likelihoods assoc to new-base-log-likelihood)
-              ; The following happens in a separate tx in the C version
-              (commute (:n-total-parent learner) inc)
-              delta-log-likelihood)))
+        (dosync
+          (let [queries
+                  (vec (for [v (range (:n-var adtree))]
+                    {:index v :value QUERY_VALUE_WILDCARD}))
+                [query-vector parent-query-vector]
+                  (populate-query-vectors (:net learner) to)
+                new-base-log-likelihood
+                  (compute-local-log-likelihood to adtree
+                    queries query-vector parent-query-vector)
+                to-local-base-log-likelihood
+                  (nth @local-base-log-likelihoods to)
+                delta-log-likelihood
+                  (- to-local-base-log-likelihood new-base-log-likelihood)]
+            (alter local-base-log-likelihoods assoc to new-base-log-likelihood)
+            ; The following happens in a separate tx in the C version, we use
+            ; commute to avoid conflicts
+            (commute (:n-total-parent learner) inc)
+            delta-log-likelihood))
       (println "ERROR: unknown task operation type" (:op task)))))
 
 (defn- find-best-insert-task [learner to-id n-total-parent base-penalty base-log-likelihood]
@@ -374,6 +375,19 @@
            :to-id   to-id
            :score   0.0})))))
 
+(defn- find-next-task [learner n-total-parent base-log-likelihood to-id]
+  (let [n-record (:n-record (:adtree learner))
+        base-penalty (* -0.5 (Math/log (double n-record)))
+        base-score (+ (* n-total-parent base-penalty)
+                      (* n-record base-log-likelihood))
+        new-task (find-best-insert-task learner to-id n-total-parent
+                    base-penalty base-log-likelihood)
+        operation-quality-factor (:operation-quality-factor learner)]
+    (if (and (not= (:from-id new-task) (:to-id new-task))
+             (> (:score new-task) (/ base-score operation-quality-factor)))
+      new-task
+      {:op :num :to-id -1 :from-id -1 :score base-score})))
+
 (defn- learn-structure [learner i n]
   (loop []
     (let [task (pop-task (:tasks learner))]
@@ -387,7 +401,8 @@
                   (if @valid?
                     ; Perform task: update graph and probabilities
                     (apply-task task (:net learner))))
-              _ (println "task processed by thread" i ":" task (if @valid? "(valid)" "(invalid)"))
+              _ (println "task processed by thread" i ":" task
+                  (if @valid? "(valid)" "(invalid)"))
               delta-log-likelihood
                 (if @valid?
                   (calculate-delta-log-likelihood task learner)
@@ -398,16 +413,7 @@
                   [(alter (:base-log-likelihood learner) + delta-log-likelihood)
                    @(:n-total-parent learner)])
               ; Find next task
-              n-record (:n-record (:adtree learner))
-              base-penalty (* -0.5 (Math/log (double n-record)))
-              base-score (+ (* n-total-parent base-penalty)
-                            (* n-record base-log-likelihood))
-              new-task (find-best-insert-task learner (:to-id task) n-total-parent base-penalty base-log-likelihood)
-              best-task
-                (if (and (not= (:from-id new-task) (:to-id new-task))
-                         (> (:score new-task) (/ base-score (:operation-quality-factor learner))))
-                  new-task
-                  {:op :num :to-id -1 :from-id -1 :score base-score})]
+              best-task (find-next-task learner n-total-parent base-log-likelihood (:to-id task))]
           (when (not= (:to-id best-task) -1)
             (println "new task on thread" i ":" best-task)
             (add-task (:tasks learner) best-task)))
