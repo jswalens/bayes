@@ -315,8 +315,11 @@
       (println "ERROR: unknown task operation type" (:op task)))))
 
 (defn- find-best-insert-task [learner to-id n-total-parent base-penalty base-log-likelihood]
-  "TODO, returns task."
-  (let [net (:net learner)]
+  "Finds a task that inserts an edge into the net, such that the local log
+  likelihood is maximally increased. Returns this task, or a 'dummy' one if none
+  was found."
+  (let [net    (:net learner)
+        adtree (:adtree learner)]
     (dosync
       (let [; Create query-vector and parent-query-vector
             ; TODO: why is this in the tx?
@@ -331,8 +334,9 @@
                   (nth @(:local-base-log-likelihoods learner) to-id)
                 invalid-ids
                   (into (net/find-descendants net to-id) parent-ids)
-                queries (for [v (range (:n-var (:adtree learner)))]
-                          {:index v :value QUERY_VALUE_WILDCARD})
+                queries
+                  (for [v (range (:n-var adtree))]
+                    {:index v :value QUERY_VALUE_WILDCARD})
                 parent-local-log-likelihoods
                   (for [from-id parent-ids
                         :when (not (.contains invalid-ids from-id))
@@ -340,7 +344,7 @@
                     (let [local-log-likelihood
                             (compute-local-log-likelihood
                               to-id
-                              (:adtree learner)
+                              adtree
                               net
                               queries
                               (sort (conj query-vector from-id))
@@ -356,7 +360,7 @@
                 score
                   (if (= best-from-id to-id)
                     0.0
-                    (let [n-record (:n-record (:adtree learner))
+                    (let [n-record (:n-record adtree)
                           n-parent (inc (count parent-ids))
                           penalty  (* base-penalty
                                       (+ n-total-parent
@@ -395,10 +399,10 @@
         (let [net
                 (:net learner)
               [valid? updated-net]
-                (dosync ; TODO: why is this in a transaction? -> nodes in net should be refs, or contain refs
-                  ; Check if task is still valid
+                ; TODO: This transaction should update the net. XXX
+                (dosync
+                  ; If task is still valid, update graph and probabilities
                   (if (is-task-valid? task net)
-                    ; Perform task: update graph and probabilities
                     [true (apply-task task net)]
                     [false net]))
               _ (println "task processed by thread" i ":" task
@@ -422,7 +426,7 @@
         (recur)))))
 
 (defn run [learner]
-  "TODO"
+  "Learn structure of the network, updates it."
   (let [n-thread    (:n-thread learner)
         create-futs (map #(future (create-tasks    learner % n-thread)) (range n-thread))
         learn-futs  (map #(future (learn-structure learner % n-thread)) (range n-thread))]
