@@ -105,64 +105,64 @@
       (list 1)))))
 
 (deftest compute-local-log-likelihood
-  ; TODO: don't know where these numbers come from
-  (is (almost= -0.6931471805599453
+  ; These values have been verified against the C version.
+  (is (almost= -0.693147
     (@#'bayes.learner/compute-local-log-likelihood
       0
       example-adtree
       [{:index 0 :value 0} {:index 1 :value 1} {:index 2 :value 1}]
       (list 0)
       (list))))
-  (is (almost= -0.34657359027997264
+  (is (almost= -0.346574
     (@#'bayes.learner/compute-local-log-likelihood
       0
       example-adtree
       [{:index 0 :value 0} {:index 1 :value 1} {:index 2 :value 1}]
       (list 0 1)
       (list 0))))
-  (is (almost= -0.5493061443340549
+  (is (almost= -0.549306
     (@#'bayes.learner/compute-local-log-likelihood
       0
       example-adtree
       [{:index 0 :value 0} {:index 1 :value 1} {:index 2 :value 1}]
       (list 1 2)
       (list 1))))
-  (is (almost= -0.6931471805599453
+  (is (almost= -0.693147
     (@#'bayes.learner/compute-local-log-likelihood
       1
       example-adtree
       [{:index 0 :value 0} {:index 1 :value 1} {:index 2 :value 1}]
       (list 0)
       (list))))
-  (is (almost= -0.34657359027997264
+  (is (almost= -0.346574
     (@#'bayes.learner/compute-local-log-likelihood
       1
       example-adtree
       [{:index 0 :value 0} {:index 1 :value 1} {:index 2 :value 1}]
       (list 0 1)
       (list 0))))
-  (is (almost= -0.5493061443340549
+  (is (almost= -0.549306
     (@#'bayes.learner/compute-local-log-likelihood
       1
       example-adtree
       [{:index 0 :value 0} {:index 1 :value 1} {:index 2 :value 1}]
       (list 1 2)
       (list 1))))
-  (is (almost= -0.6931471805599453
+  (is (almost= -0.693147
     (@#'bayes.learner/compute-local-log-likelihood
       2
       example-adtree
       [{:index 0 :value 0} {:index 1 :value 1} {:index 2 :value 1}]
       (list 0)
       (list))))
-  (is (almost= -0.34657359027997264
+  (is (almost= -0.346574
     (@#'bayes.learner/compute-local-log-likelihood
       2
       example-adtree
       [{:index 0 :value 0} {:index 1 :value 1} {:index 2 :value 1}]
       (list 0 1)
       (list 0))))
-  (is (almost= -0.4773856262211097  ; different than other id's
+  (is (almost= -0.477386  ; different than other id's
     (@#'bayes.learner/compute-local-log-likelihood
       2
       example-adtree
