@@ -376,15 +376,15 @@
            :score   0.0})))))
 
 (defn- find-next-task [learner n-total-parent base-log-likelihood to-id]
-  (let [n-record (:n-record (:adtree learner))
+  (let [n-record     (:n-record (:adtree learner))
         base-penalty (* -0.5 (Math/log (double n-record)))
-        base-score (+ (* n-total-parent base-penalty)
-                      (* n-record base-log-likelihood))
-        new-task (find-best-insert-task learner to-id n-total-parent
-                    base-penalty base-log-likelihood)
-        operation-quality-factor (:operation-quality-factor learner)]
+        base-score   (+ (* n-total-parent base-penalty)
+                        (* n-record base-log-likelihood))
+        new-task     (find-best-insert-task learner to-id n-total-parent
+                       base-penalty base-log-likelihood)
+        oqf          (:operation-quality-factor learner)]
     (if (and (not= (:from-id new-task) (:to-id new-task))
-             (> (:score new-task) (/ base-score operation-quality-factor)))
+             (> (:score new-task) (/ base-score oqf)))
       new-task
       {:op :num :to-id -1 :from-id -1 :score base-score})))
 
