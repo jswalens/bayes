@@ -73,19 +73,22 @@
       (:count node)
     :else
       (let [; q is index in query-vector
-            ; query-index = query-vector[q] = the index of the query in queries
-            ; queries[query-index] = the query
-            query-index          (nth query-vector q)
-            {query-value :value} (nth queries query-index)
-            vary-index           (- query-index (:index node) 1)
-            vary                 (nth (:vary-vector node) vary-index)]
+            ; query-vector[q] = the actual index of the query in queries
+            ;   = actual-query-index
+            ; queries[actual-query-index] = the query, which has a value and
+            ;   an index (noted-query-index)
+            actual-query-index (nth query-vector q)
+            {noted-query-index :index query-value :value}
+                               (nth queries actual-query-index)
+            vary-index         (- noted-query-index (:index node) 1)
+            vary               (nth (:vary-vector node) vary-index)]
         (if (= query-value (:most-common-value vary))
           (let [super-query-vector
                   (drop-one q query-vector)
                 super-count
                   (get-count adtree queries super-query-vector)
                 inverted-queries
-                  (update-in queries [query-index :value] swap-bit)
+                  (update-in queries [actual-query-index :value] swap-bit)
                 invert-count
                   ; this call will end up in the else branch below
                   (get-count-helper node q inverted-queries query-vector
@@ -109,6 +112,8 @@
 
 (defn get-count [adtree queries query-vector]
   "Get count of (root node of) adtree."
-  (let [last-query-index (or (last query-vector) -1)]
+  (let [last-query-index (if (empty? query-vector)
+                           -1
+                           (:index (nth queries (last query-vector))))]
     (get-count-helper (:root-node adtree) 0 queries query-vector
       last-query-index adtree)))
