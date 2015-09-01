@@ -225,18 +225,29 @@
                           (assoc-in [2 :value] 1))
                         query-vector parent-query-vector))]
               {:index vv :value other-local-log-likelihood}))
-        ; A.2 Sort them and take last (highest)
-        best-local
-          (last (sort-by :value other-local-log-likelihoods))]
-    (if (> (:value best-local) this-local-log-likelihood)
+        ; A.2 Sort them and take the one with the highest value. If there are
+        ; several with the same value, take the one with the lowest index, for
+        ; compatibility with the C version.
+        best-local-value
+          (->> other-local-log-likelihoods
+            (sort-by :value)
+            (last)
+            (:value))
+        best-local-index
+          (->> other-local-log-likelihoods
+            (filter #(= (:value %) best-local-value))
+            (sort-by :index)
+            (first)
+            (:index))]
+    (if (> best-local-value this-local-log-likelihood)
       (let [penalty        (* -0.5 (Math/log (double (:n-record adtree))))
             log-likelihood (* (:n-record adtree)
                               (+ base-log-likelihood
-                                 (:value best-local)
+                                 best-local-value
                                  (- this-local-log-likelihood)))
             score          (+ penalty log-likelihood)]
         {:op      :insert
-         :from-id (:index best-local)
+         :from-id best-local-index
          :to-id   v
          :score   score})
       nil)))
