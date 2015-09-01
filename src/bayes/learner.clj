@@ -33,14 +33,16 @@
 ;
 
 (defn- add-task [tasks task]
-  "Add `task` to `tasks`, ordered by score."
+  "Add `task` to `tasks`, ordered by descending score."
   (dosync
-    (ref-set tasks (vec (sort-by :score (conj @tasks task))))))
+    (ref-set tasks (vec (reverse (sort-by :score (conj @tasks task)))))))
 
 (defn- add-tasks [tasks new-tasks]
-  "Add `new-tasks` to `tasks`, ordered by score."
+  "Add `new-tasks` to `tasks`, ordered by descending score."
   (dosync
-    (ref-set tasks (vec (sort-by :score (concat @tasks new-tasks))))))
+    ; reversing new-tasks ensures scores with equal size get taken in same order
+    ; they were inserted.
+    (ref-set tasks (vec (reverse (sort-by :score (concat @tasks (reverse new-tasks))))))))
 
 (defn- pop-task [tasks]
   "Returns first element of `tasks`, and pops that element from `tasks`. Returns
@@ -48,8 +50,8 @@
   (dosync
     (if (empty? @tasks)
       nil
-      (let [v (peek @tasks)]
-        (alter tasks pop)
+      (let [v (first @tasks)]
+        (alter tasks rest)
         v))))
 
 ;

@@ -10,22 +10,22 @@
 
 (deftest add-task
   (are [tasks task expected] (= expected (@#'bayes.learner/add-task tasks task))
-    (ref [{:op 1 :score 1} {:op 3 :score 3}]) {:op 5 :score 5}
-      [{:op 1 :score 1} {:op 3 :score 3} {:op 5 :score 5}]
-    (ref [{:op 1 :score 1} {:op 3 :score 3}]) {:op 2 :score 2}
-      [{:op 1 :score 1} {:op 2 :score 2} {:op 3 :score 3}]))
+    (ref [{:op 3 :score 3} {:op 1 :score 1}]) {:op 5 :score 5}
+      [{:op 5 :score 5} {:op 3 :score 3} {:op 1 :score 1}]
+    (ref [{:op 3 :score 3} {:op 1 :score 1}]) {:op 2 :score 2}
+      [{:op 3 :score 3} {:op 2 :score 2} {:op 1 :score 1}]))
 
 (deftest add-tasks
   (is (=
-    [{:op 1 :score 1} {:op 2 :score 2} {:op 3 :score 3} {:op 4 :score 4}]
+    [{:op 4 :score 4} {:op 3 :score 3} {:op 2 :score 2} {:op 1 :score 1}]
     (@#'bayes.learner/add-tasks
-      (ref [{:op 1 :score 1} {:op 3 :score 3}])
-      [{:op 2 :score 2} {:op 4 :score 4}]))))
+      (ref [{:op 3 :score 3} {:op 1 :score 1}])
+      [{:op 4 :score 4} {:op 2 :score 2}]))))
 
 (deftest pop-task
-  (let [tasks (ref [{:op 1 :score 1} {:op 2 :score 2} {:op 3 :score 3}])]
+  (let [tasks (ref [{:op 3 :score 3} {:op 2 :score 2} {:op 1 :score 1}])]
     (is (= {:op 3 :score 3} (@#'bayes.learner/pop-task tasks)))
-    (is (= [{:op 1 :score 1} {:op 2 :score 2}] @tasks))))
+    (is (= [{:op 2 :score 2} {:op 1 :score 1}] @tasks))))
 
 (deftest set-query-value
   (is (= [{:index 0 :value 10} {:index 1 :value 21} {:index 2 :value 12}]
