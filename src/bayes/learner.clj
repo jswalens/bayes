@@ -275,9 +275,11 @@
       :insert  (not (or (net/has-edge? net from to)
                         (net/has-path?  net to from)))
       :remove  true ; can never create cycle, so always valid
-      :reverse (not (net/has-path?
-                      (net/remove-edge net from to) ; temp remove edge for check
-                      from to))
+      :reverse (dosync
+                  (net/remove-edge net from to) ; temp remove edge for check
+                  (let [valid? (not (net/has-path? net from to))]
+                    (net/insert-edge net from to)
+                    valid?))
       (println "ERROR: unknown task operation type" (:op task)))))
 
 (defn- apply-task [task net]
