@@ -125,11 +125,8 @@
   ; In Clojure, we have queries = [X]; query-vector = [0];
   ; parent-query-vector = []
   (for [v vars]
-    (+
-      (compute-specific-local-log-likelihood adtree [{:index v :value 0}]
-        [0] [])
-      (compute-specific-local-log-likelihood adtree [{:index v :value 1}]
-        [0] []))))
+    (+ (compute-specific-local-log-likelihood adtree [{:index v :value 0}] [0] [])
+       (compute-specific-local-log-likelihood adtree [{:index v :value 1}] [0] []))))
 
 ;
 ; score
@@ -234,9 +231,9 @@
     (if (> (:value best-local) this-local-log-likelihood)
       (let [penalty        (* -0.5 (Math/log (double (:n-record adtree))))
             log-likelihood (* (:n-record adtree)
-                             (+ base-log-likelihood
-                               (:value best-local)
-                               (- this-local-log-likelihood)))
+                              (+ base-log-likelihood
+                                 (:value best-local)
+                                 (- this-local-log-likelihood)))
             score          (+ penalty log-likelihood)]
         {:op      :insert
          :from-id (:index best-local)
