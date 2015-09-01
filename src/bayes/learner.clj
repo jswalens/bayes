@@ -140,11 +140,9 @@
   (reduce + ns))
 
 (defn score [learner] ; TODO: should be called in tx?
-  (let [n-var
-          (:n-var (:adtree learner))
-        queries
-          (vec (for [v (range n-var)]
-            {:index v :value QUERY_VALUE_WILDCARD}))
+  (let [n-var   (:n-var (:adtree learner))
+        queries (vec (for [v (range n-var)]
+                  {:index v :value QUERY_VALUE_WILDCARD}))
         n-total-parent
           (sum
             (map
@@ -163,12 +161,9 @@
                     query-vector
                     parent-query-vector)))
               (range n-var)))
-        n-record
-          (:n-record (:adtree learner))
-        penalty
-          (* -0.5 n-total-parent (Math/log n-record))
-        score
-          (+ penalty (* n-record log-likelihood))]
+        n-record (:n-record (:adtree learner))
+        penalty  (* -0.5 n-total-parent (Math/log n-record))
+        score    (+ penalty (* n-record log-likelihood))]
     score))
 
 ;
