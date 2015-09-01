@@ -278,7 +278,7 @@
       (println "ERROR: unknown task operation type" (:op task)))))
 
 (defn- apply-task [task net]
-  "Apply `task` to `net`."
+  "Apply `task` to `net`. Updates `net`."
   ((case (:op task)
     :insert  net/insert-edge
     :remove  net/remove-edge
@@ -395,15 +395,15 @@
   (loop []
     (let [task (pop-task (:tasks learner))]
       (when (not (nil? task))
-        (let [net
-                (:net learner)
-              [valid? updated-net]
-                ; TODO: This transaction should update the net. XXX
-                (dosync
-                  ; If task is still valid, update graph and probabilities
+        (let [net    (:net learner)
+              valid?
+                (dosync ; Updates the net
                   (if (is-task-valid? task net)
-                    [true (apply-task task net)]
-                    [false net]))
+                    ; If task is still valid, update graph and probabilities
+                    (do
+                      (apply-task task net)
+                      true)
+                    false))
               _ (println "task processed by thread" i ":" task
                   (if valid? "(valid)" "(invalid)"))
               delta-log-likelihood
