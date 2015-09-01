@@ -331,7 +331,6 @@
         adtree (:adtree learner)]
     (dosync
       (let [; Create query-vector and parent-query-vector
-            ; TODO: why is this in the tx?
             parent-query-vector (populate-parent-query-vector net to-id)
             query-vector        (conj parent-query-vector to-id)
             ; Search all possible valid operations for better local log likelihood
