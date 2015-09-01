@@ -211,6 +211,23 @@
   (let [learner (learner/alloc example-adtree example-params)]
     (is (almost= -7.271270 (learner/score learner)))))
 
+(deftest create-partition
+  (are [min max i n expected] (= expected (@#'bayes.learner/create-partition min max i n))
+    ; [0 1 2 3] in 4 partitions:
+    0  4  0 4 (list 0)
+    0  4  1 4 (list 1)
+    0  4  2 4 (list 2)
+    0  4  3 4 (list 3)
+    ; [0 1 2 3] in 3 partitions:
+    0  4  0 3 (list 0)
+    0  4  1 3 (list 1)
+    0  4  2 3 (list 2 3)
+    ; [0 1 2 3] in 2 partitions:
+    0  4  0 2 (list 0 1)
+    0  4  1 2 (list 2 3)
+    ; [0 1 2 3] in 1 partition:
+    0  4  0 1 (list 0 1 2 3)))
+
 (deftest run
   ; Note: results have been verified against C version.
   ; Simple data: records all "2"
