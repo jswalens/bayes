@@ -195,7 +195,7 @@
                      {:index vv :value nil}
                      {:index vv :value nil}]
                   queries
-                    (assoc-in initial-queries [(if (< v vv) 0 1) :index] vv)
+                    (assoc-in initial-queries [(if (< v vv) 0 1) :index] v)
                   query-vector        [0 1]
                   parent-query-vector [2]
                   other-local-log-likelihood
