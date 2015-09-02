@@ -6,19 +6,73 @@
             [bayes.learner :as learner]
             [taoensso.timbre.profiling :refer [profile p defnp]]))
 
-(def default-params
+(def c-params
+  ; Default parameters of C version
+  ; Takes a long time
   {:edge    -1   ; -1 means no limit
    :insert  1
    :number  4
    :percent 10
    :quality 1.0
-   ; In the C version, the default for :record is 4096 and for :var 32. However,
-   ; adtree/make takes > 500 seconds on my machine for these values. For 256
-   ; records and 16 variables this is only 0.4s.
-   :record  256  ; 4096
+   :record  4096
    :seed    1
    :thread  1
-   :var     16}) ; 32
+   :var     32})
+
+(def fast-params
+  ; Used for testing
+  ; In the C version, the default for :record is 4096 and for :var 32. However,
+  ; adtree/make takes > 500 seconds on my machine for these values. For 256
+  ; records and 16 variables this is only 0.4s.
+  {:edge    -1   ; -1 means no limit
+   :insert  1
+   :number  4
+   :percent 10
+   :quality 1.0
+   :record  256
+   :seed    1
+   :thread  1
+   :var     16})
+
+(def paper-normal
+  ; "bayes" benchmark in STAMP paper
+  {:edge    2
+   :insert  2
+   :number  2
+   :percent 20
+   :quality 1.0
+   :record  1024
+   :seed    1
+   :thread  1
+   :var     32})
+
+(def paper-larger
+  ; "bayes+" benchmark in STAMP paper
+  {:edge    2
+   :insert  2
+   :number  2
+   :percent 20
+   :quality 1.0
+   :record  4096
+   :seed    1
+   :thread  1
+   :var     32})
+
+(def paper-largest
+  ; "bayes++" benchmark in STAMP paper
+  ; Takes a really long time
+  {:edge    8
+   :insert  2
+   :number  10
+   :percent 40
+   :quality 1.0
+   :record  4096
+   :seed    1
+   :thread  1
+   :var     32})
+
+(def default-params
+  fast-params)
 
 (def usage
 "Usage: ./bayes [options]
