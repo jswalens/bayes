@@ -4,7 +4,7 @@
             [bayes.data :as data]
             [bayes.adtree :as adtree]
             [bayes.learner :as learner]
-            [taoensso.timbre.profiling :refer [profile]]))
+            [taoensso.timbre.profiling :refer [profile p defnp]]))
 
 (def default-params
   {:edge    -1   ; -1 means no limit
@@ -40,49 +40,53 @@ Options:                                         (defaults)
   ; TODO: actually parse arguments
   default-params)
 
-(defn score [net adtree params]
+(defnp score [net adtree params]
   "Score `net` without learning."
   (let [learner (assoc (learner/alloc adtree params) :net net)]
     (learner/score learner)))
 
-(defn -main [& args]
+(defnp -main [& args]
   "Main function. `args` should be a list of command line arguments."
-  ; Initialization
-  (let [params (parse-args args)]
-    (println "Random seed                =" (:seed params))
-    (println "Number of vars             =" (:var params))
-    (println "Number of records          =" (:record params))
-    (println "Max num parents            =" (:number params))
-    (println "% chance of parent         =" (:percent params))
-    (println "Insert penalty             =" (:insert params))
-    (println "Max num edge learned / var =" (:edge params))
-    (println "Operation quality factor   =" (:quality params))
-    ; Generate data
-    (println "Generating data...")
-    (random/set-seed (:seed params))
-    (let [{data :data net :net} (data/generate params)
-          _ (println "done.")
-          ; Generate adtree
-          _ (println "Generating adtree...")
-          adtree (time (adtree/make data))
-          _ (println "done.")
-          ; Score original network
-          actual-score (score net adtree params)
-          _ (println "actual score:" actual-score)
-          ; Learn structure of Bayesian network
-          _ (println "Learning structure...")
-          learner (learner/alloc adtree params)
-          _ (time (learner/run learner))
-          _ (println "done.")
-          ; Check solution
-          ; TODO implement net/is-cycle? to check solution (optional)
-          ;status (net/is-cycle? (:net learner))
-          ;_ (when-not status (println "ERROR: solution is incorrect"))
-          learn-score (learner/score learner)
-          _ (println "Learn score  =" learn-score)
-          _ (println "Actual score =" actual-score)]
-      ; Clean up
-      (shutdown-agents))))
+  (profile :info :all
+    ; Initialization
+    (let [params (p :parse-args (parse-args args))]
+      (println "Random seed                =" (:seed params))
+      (println "Number of vars             =" (:var params))
+      (println "Number of records          =" (:record params))
+      (println "Max num parents            =" (:number params))
+      (println "% chance of parent         =" (:percent params))
+      (println "Insert penalty             =" (:insert params))
+      (println "Max num edge learned / var =" (:edge params))
+      (println "Operation quality factor   =" (:quality params))
+      ; Generate data
+      (println "Generating data...")
+      (random/set-seed (:seed params))
+      (let [{data :data net :net} (p :generate-data (data/generate params))
+            _ (println "done.")
+            ; Generate adtree
+            _ (println "Generating adtree...")
+            adtree (p :generate-adtree (time (adtree/make data)))
+            _ (println "done.")
+            ; Score original network
+            actual-score (p :score-original (score net adtree params))
+            _ (println "actual score:" actual-score)
+            ; Learn structure of Bayesian network
+            _ (println "Learning structure...")
+            learner (p :alloc-learner (learner/alloc adtree params))
+            _ (p :run-learner (time (learner/run learner)))
+            _ (println "done.")
+            ; Check solution
+            ; TODO implement net/is-cycle? to check solution (optional)
+            ;status (net/is-cycle? (:net learner))
+            ;_ (when-not status (println "ERROR: solution is incorrect"))
+            learn-score (p :score-solution (learner/score learner))
+            _ (println "Learn score  =" learn-score)
+            _ (println "Actual score =" actual-score)]
+        nil)))
+  ; Clean up
+  ; shutdown-agents should be after profile, else RejectedExecutionException is
+  ; raised in timbre
+  (shutdown-agents))
 
 ; To run manually:
 ;(main *command-line-args*)
