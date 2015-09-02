@@ -352,8 +352,8 @@
                   (into (net/find-descendants net to-id) parent-ids)
                 queries
                   (create-queries (:n-var adtree))
-                parent-query-vector (populate-parent-query-vector net to-id)
-                query-vector        (conj parent-query-vector to-id)
+                {query-vector :query-vector parent-query-vector :parent-query-vector}
+                  (populate-query-vectors net to-id)
                 parent-local-log-likelihoods
                   (for [from-id (range (:n-var adtree))
                         :when (not (.contains invalid-ids from-id))
