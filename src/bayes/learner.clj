@@ -144,16 +144,16 @@
   "Sums `ns`."
   (reduce + ns))
 
-(defn score [learner] ; TODO: should be called in tx?
-  "Score learner.
-  Should be called in transaction."
+(defn score [learner]
+  "Score learner."
   (let [n-var   (:n-var (:adtree learner))
         queries (create-queries n-var)
         n-total-parent
-          (sum
-            (map
-              (fn [v] (count @(net/get-parent-ids (:net learner) v)))
-              (range n-var)))
+          (dosync
+            (sum
+              (map
+                (fn [v] (count @(net/get-parent-ids (:net learner) v)))
+                (range n-var))))
         log-likelihood
           (sum
             (map
