@@ -259,9 +259,10 @@
   (let [adtree                     (:adtree learner)
         vars                       (create-partition 0 (:n-var adtree) i n)
                                    ; subset of variables for this thread
-        local-base-log-likelihoods (compute-local-base-log-likelihoods vars adtree)
+        local-base-log-likelihoods (vec (compute-local-base-log-likelihoods vars adtree))
         base-log-likelihood        (sum local-base-log-likelihoods)]
     (dosync
+      (ref-set (:local-base-log-likelihoods learner) local-base-log-likelihoods)
       (alter (:base-log-likelihood learner) + base-log-likelihood))
     (let [tasks (filter some?
                   (map-indexed
