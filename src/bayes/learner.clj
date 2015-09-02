@@ -9,7 +9,7 @@
 (defn alloc [adtree params]
   "Allocate the learner.
 
-  We have an extra parameter params to get some globals.
+  We have an extra argument `params` to get some global parameters.
 
   The C version has tasks, an array containing tasks, and taskList, an ordered
   list of pointers to tasks (ordered by score). We only have tasks, as an
@@ -18,11 +18,15 @@
   In the C version, parts of this struct are aligned to cache lines. We don't
   care about that here."
   {:adtree                     adtree
+   ; Net, containing refs:
    :net                        (net/alloc (:n-var adtree))
+   ; Global variables:
    :local-base-log-likelihoods (ref (vec (repeat (:n-var adtree) 0.0)))
    :base-log-likelihood        (ref 0.0)
-   :tasks                      (ref []) ; sorted by score
    :n-total-parent             (ref 0)
+   ; Shared task queue:
+   :tasks                      (ref []) ; sorted by score
+   ; Parameters:
    :n-thread                   (:thread params)
    :max-num-edge-learned       (:edge params)
    :insert-penalty             (:insert params)
@@ -349,6 +353,7 @@
           (let [; Search all possible valid operations for better local log
                 ; likelihood
                 invalid-ids
+                  ; Don't search any descendant, immediate parents, or self
                   (-> (net/find-descendants net to-id)
                     (into parent-ids)
                     (conj to-id))
@@ -356,7 +361,7 @@
                   (create-queries (:n-var adtree))
                 {query-vector :query-vector parent-query-vector :parent-query-vector}
                   (populate-query-vectors net to-id)
-                parent-local-log-likelihoods
+                alternative-local-log-likelihoods
                   (for [from-id (range (:n-var adtree))
                         :when (not (.contains invalid-ids from-id))]
                     {:from-id from-id
@@ -371,13 +376,14 @@
                   (nth @(:local-base-log-likelihoods learner) to-id)
                 {best-from-id :from-id best-local-log-likelihood :local-log-likelihood}
                   (->>
-                    (conj parent-local-log-likelihoods
+                    (conj alternative-local-log-likelihoods
+                      ; or, nothing happens:
                       {:from-id to-id :local-log-likelihood old-local-log-likelihood})
                     (sort-by :local-log-likelihood compare-higher)
-                    (first))
+                    (first)) ; find one with highest local-log-likelihood
                 score
                   (if (= best-from-id to-id)
-                    0.0
+                    0.0 ; best to do nothing
                     (let [n-record (:n-record adtree)
                           n-parent (inc (count parent-ids))
                           penalty  (* base-penalty
