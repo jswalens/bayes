@@ -324,6 +324,11 @@
             delta-log-likelihood))
       (println "ERROR: unknown task operation type" (:op task)))))
 
+(defn- compare-higher [a b]
+  "A comparator returning +1 if a < b, 0 if a = b, and -1 if a > b, the opposite
+  of the normal compare."
+  (compare b a))
+
 (defn- find-best-insert-task [learner to-id n-total-parent base-penalty base-log-likelihood]
   "Finds a task that inserts an edge into the net, such that the local log
   likelihood is maximally increased. Returns this task, or a 'dummy' one if none
@@ -331,40 +336,39 @@
   (let [net    (:net learner)
         adtree (:adtree learner)]
     (dosync
-      (let [; Create query-vector and parent-query-vector
-            parent-query-vector (populate-parent-query-vector net to-id)
-            query-vector        (conj parent-query-vector to-id)
-            ; Search all possible valid operations for better local log likelihood
-            parent-ids           @(net/get-parent-ids net to-id)
+      (let [parent-ids           @(net/get-parent-ids net to-id)
             max-num-edge-learned (:max-num-edge-learned learner)]
         (if (or (< max-num-edge-learned 0)
                 (<= (count parent-ids) max-num-edge-learned))
-          (let [old-local-log-likelihood
-                  (nth @(:local-base-log-likelihoods learner) to-id)
+          (let [; Search all possible valid operations for better local log
+                ; likelihood
                 invalid-ids
                   (into (net/find-descendants net to-id) parent-ids)
                 queries
-                  (for [v (range (:n-var adtree))]
-                    {:index v :value QUERY_VALUE_WILDCARD})
+                  ; TODO: this appears in several places, move to helper function
+                  (vec (for [v (range (:n-var adtree))]
+                    {:index v :value QUERY_VALUE_WILDCARD}))
+                parent-query-vector (populate-parent-query-vector net to-id)
+                query-vector        (conj parent-query-vector to-id)
                 parent-local-log-likelihoods
-                  (for [from-id parent-ids
+                  (for [from-id (range (:n-var adtree))
                         :when (not (.contains invalid-ids from-id))
                         :when (not= from-id to-id)]
-                    (let [local-log-likelihood
-                            (compute-local-log-likelihood
-                              to-id
-                              adtree
-                              net
-                              queries
-                              (sort (conj query-vector from-id))
-                              (sort (conj parent-query-vector from-id)))]
-                      {:from-id from-id
-                       :local-log-likelihood local-log-likelihood}))
+                    {:from-id from-id
+                     :local-log-likelihood
+                       (compute-local-log-likelihood
+                         to-id
+                         adtree
+                         queries
+                         (sort (conj query-vector from-id))
+                         (sort (conj parent-query-vector from-id)))})
+                old-local-log-likelihood
+                  (nth @(:local-base-log-likelihoods learner) to-id)
                 {best-from-id :from-id best-local-log-likelihood :local-log-likelihood}
                   (->>
                     (conj parent-local-log-likelihoods
                       {:from-id to-id :local-log-likelihood old-local-log-likelihood})
-                    (sort-by :local-log-likelihood)
+                    (sort-by :local-log-likelihood compare-higher)
                     (first))
                 score
                   (if (= best-from-id to-id)
