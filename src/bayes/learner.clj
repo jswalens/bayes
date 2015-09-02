@@ -96,7 +96,7 @@
 (defn- populate-query-vectors [net id]
   (let [parent-query-vector (populate-parent-query-vector net id)
         query-vector        (sort (conj parent-query-vector id))]
-    [query-vector parent-query-vector]))
+    {:query-vector query-vector :parent-query-vector parent-query-vector}))
 
 ;
 ; Functions to compute (specific) local (base) log likelihood
@@ -155,7 +155,7 @@
           (sum
             (map
               (fn [v]
-                (let [[query-vector parent-query-vector]
+                (let [{query-vector :query-vector parent-query-vector :parent-query-vector}
                         (populate-query-vectors (:net learner) v)]
                   (compute-local-log-likelihood
                     v
@@ -309,8 +309,8 @@
     (case (:op task)
       :insert
         (dosync
-          (let [queries (create-queries (:n-var adtree)
-                [query-vector parent-query-vector]
+          (let [queries (create-queries (:n-var adtree))
+                {query-vector :query-vector parent-query-vector :parent-query-vector}
                   (populate-query-vectors (:net learner) to)
                 new-base-log-likelihood
                   (compute-local-log-likelihood to adtree

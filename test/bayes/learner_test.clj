@@ -58,7 +58,9 @@
     central-net 2 (list)))
 
 (deftest populate-query-vectors
-  (are [net id pqv qv] (= [qv pqv] (@#'bayes.learner/populate-query-vectors net id))
+  (are [net id pqv qv]
+    (= {:query-vector qv :parent-query-vector pqv}
+      (@#'bayes.learner/populate-query-vectors net id))
     linear-net 0  (list)     (list 0)
     linear-net 1  (list 0)   (list 0 1)
     linear-net 2  (list 1)   (list 1 2)
