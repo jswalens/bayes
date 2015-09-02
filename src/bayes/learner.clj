@@ -59,13 +59,12 @@
 ;
 ; queries are a vector of maps {:index ... :value ...}, e.g:
 ; [{:index 0 :value -1} {:index 1 :value 1} {:index 2 :value 0} ...]
-; where :index of query i is always i (I think XXX), and value is either 0, 1,
+; where :index of query i is normally[*] always i, and value is either 0, 1,
 ; or QUERY_VALUE_WILDCARD (-1).
 ; This corresponds to the queries of the C version, which is an array of
 ; structs.
 ;
-; TODO: is it still necessary to keep the index in the query for the Clojure
-; version?
+; [*] There are exceptions to this, notably in create-task.
 
 (def ^:const QUERY_VALUE_WILDCARD -1)
 
