@@ -69,6 +69,11 @@
 
 (def ^:const QUERY_VALUE_WILDCARD -1)
 
+(defn- create-queries [n-var]
+  (vec
+    (for [v (range n-var)]
+      {:index v :value QUERY_VALUE_WILDCARD})))
+
 (defn- set-query-value [queries index value]
   "Set value of query at `index` in `queries` to `value`."
   (assoc-in queries [index :value] value))
@@ -140,8 +145,7 @@
 
 (defn score [learner] ; TODO: should be called in tx?
   (let [n-var   (:n-var (:adtree learner))
-        queries (vec (for [v (range n-var)]
-                  {:index v :value QUERY_VALUE_WILDCARD}))
+        queries (create-queries n-var)
         n-total-parent
           (sum
             (map
@@ -305,9 +309,7 @@
     (case (:op task)
       :insert
         (dosync
-          (let [queries
-                  (vec (for [v (range (:n-var adtree))]
-                    {:index v :value QUERY_VALUE_WILDCARD}))
+          (let [queries (create-queries (:n-var adtree)
                 [query-vector parent-query-vector]
                   (populate-query-vectors (:net learner) to)
                 new-base-log-likelihood
@@ -345,9 +347,7 @@
                 invalid-ids
                   (into (net/find-descendants net to-id) parent-ids)
                 queries
-                  ; TODO: this appears in several places, move to helper function
-                  (vec (for [v (range (:n-var adtree))]
-                    {:index v :value QUERY_VALUE_WILDCARD}))
+                  (create-queries (:n-var adtree))
                 parent-query-vector (populate-parent-query-vector net to-id)
                 query-vector        (conj parent-query-vector to-id)
                 parent-local-log-likelihoods
