@@ -6,4 +6,11 @@
   :resource-paths ["resources/clojure-1.6.0.jar"]
   :main ^:skip-aot bayes.main
   :target-path "target/%s"
-  :profiles {:uberjar {:aot :all}})
+  :profiles {
+    :dev {
+      :plugins [[lein-cloverage "1.0.6"]]
+    }
+    :uberjar {
+      :aot :all
+    }
+  })
