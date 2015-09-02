@@ -256,7 +256,7 @@
         learner (learner/alloc adtree example-params)]
     (is (almost= -8.317766 (learner/score learner)))
     (learner/run learner)
-    (is (almost= -4.852030 (learner/score learner))))
+    (is (almost= -4.158883 (learner/score learner))))
   ; example-adtree from above
   (let [learner (learner/alloc example-adtree example-params)]
     (is (almost= -7.271270 (learner/score learner)))
