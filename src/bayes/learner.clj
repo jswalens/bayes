@@ -349,15 +349,16 @@
           (let [; Search all possible valid operations for better local log
                 ; likelihood
                 invalid-ids
-                  (into (net/find-descendants net to-id) parent-ids)
+                  (-> (net/find-descendants net to-id)
+                    (into parent-ids)
+                    (conj to-id))
                 queries
                   (create-queries (:n-var adtree))
                 {query-vector :query-vector parent-query-vector :parent-query-vector}
                   (populate-query-vectors net to-id)
                 parent-local-log-likelihoods
                   (for [from-id (range (:n-var adtree))
-                        :when (not (.contains invalid-ids from-id))
-                        :when (not= from-id to-id)]
+                        :when (not (.contains invalid-ids from-id))]
                     {:from-id from-id
                      :local-log-likelihood
                        (compute-local-log-likelihood
