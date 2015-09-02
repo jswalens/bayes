@@ -132,9 +132,10 @@
   ; parentQuery = Z; and parentQueryVector = [].
   ; In Clojure, we have queries = [X]; query-vector = [0];
   ; parent-query-vector = []
-  (for [v vars]
-    (+ (compute-specific-local-log-likelihood adtree [{:index v :value 0}] [0] [])
-       (compute-specific-local-log-likelihood adtree [{:index v :value 1}] [0] []))))
+  (vec
+    (for [v vars]
+      (+ (compute-specific-local-log-likelihood adtree [{:index v :value 0}] [0] [])
+         (compute-specific-local-log-likelihood adtree [{:index v :value 1}] [0] [])))))
 
 ;
 ; score
@@ -266,7 +267,7 @@
   (let [adtree                     (:adtree learner)
         vars                       (create-partition 0 (:n-var adtree) i n)
                                    ; subset of variables for this thread
-        local-base-log-likelihoods (vec (compute-local-base-log-likelihoods vars adtree))
+        local-base-log-likelihoods (compute-local-base-log-likelihoods vars adtree)
         base-log-likelihood        (sum local-base-log-likelihoods)]
     (dosync
       (ref-set (:local-base-log-likelihoods learner) local-base-log-likelihoods)
