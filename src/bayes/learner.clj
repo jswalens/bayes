@@ -89,11 +89,13 @@
 ; we have an extra bit of indirection.
 
 (defn- populate-parent-query-vector [net id]
+  "Returns parent-query-vector for node with `id`.
+  Should be called in transaction."
   @(net/get-parent-ids net id))
 
-; TODO: are these called in transactions everywhere?
-
 (defn- populate-query-vectors [net id]
+  "Returns {:query-vector ... :parent-query-vector ...} for node with `id`.
+  Should be called in transaction."
   (let [parent-query-vector (populate-parent-query-vector net id)
         query-vector        (sort (conj parent-query-vector id))]
     {:query-vector query-vector :parent-query-vector parent-query-vector}))
@@ -144,6 +146,8 @@
   (reduce + ns))
 
 (defn score [learner] ; TODO: should be called in tx?
+  "Score learner.
+  Should be called in transaction."
   (let [n-var   (:n-var (:adtree learner))
         queries (create-queries n-var)
         n-total-parent
