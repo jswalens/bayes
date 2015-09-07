@@ -1,10 +1,41 @@
 (ns bayes.main
   (:gen-class)
-  (:require [random]
+  (:require [clojure.tools.cli]
+            [random]
             [bayes.data :as data]
             [bayes.adtree :as adtree]
             [bayes.learner :as learner]
             [taoensso.timbre.profiling :refer [profile p defnp]]))
+
+(def cli-params
+  [["-e" "--edge UINT"    "Max [e]dges learned per variable (-1 for no limit)"
+    :default -1
+    :parse-fn #(Integer/parseInt %)]
+   ["-i" "--insert UINT"  "Edge [i]nsert penalty"
+    :default 1
+    :parse-fn #(Integer/parseInt %)]
+   ["-n" "--number UINT"  "Max [n]umber of parents"
+    :default 4
+    :parse-fn #(Integer/parseInt %)]
+   ["-p" "--percent UINT" "[p]ercent chance of parent"
+    :default 10
+    :parse-fn #(Integer/parseInt %)]
+   ["-q" "--quality FLT"  "Operation [q]uality factor"
+    :default 1.0
+    :parse-fn #(Double/parseDouble %)]
+   ["-r" "--record UINT"  "Number of [r]ecords"
+    :default 256
+    :parse-fn #(Integer/parseInt %)]
+   ["-s" "--seed UINT"    "Random [s]eed"
+    :default 1
+    :parse-fn #(Integer/parseInt %)]
+   ["-t" "--thread UINT"  "Number of [t]hreads"
+    :default 1
+    :parse-fn #(Integer/parseInt %)]
+   ["-v" "--var UINT"     "Number of [v]ariables"
+    :default 16
+    :parse-fn #(Integer/parseInt %)]
+   ["-h" "--help"]])
 
 (def c-params
   ; Default parameters of C version
@@ -71,28 +102,19 @@
    :thread  1
    :var     32})
 
-(def default-params
-  fast-params)
-
 (def usage
+  (str
 "Usage: ./bayes [options]
 
-Options:                                         (defaults)
+Options:
 
-    e <UINT>   Max [e]dges learned per variable  (-1)
-    i <UINT>   Edge [i]nsert penalty             (1)
-    n <UINT>   Max [n]umber of parents           (4)
-    p <UINT>   [p]ercent chance of parent        (10)
-    q <FLT>    Operation [q]uality factor        (1.0)
-    r <UINT>   Number of [r]ecords               (4096)
-    s <UINT>   Random [s]eed                     (1)
-    t <UINT>   Number of [t]hreads               (1)
-    v <UINT>   Number of [v]ariables             (32)")
+" (:summary (clojure.tools.cli/parse-opts nil cli-params))))
 
 (defn parse-args [args]
-  "Parse the arguments."
-  ; TODO: actually parse arguments
-  default-params)
+  "Parse the command line arguments.
+
+  Ignores errors."
+  (:options (clojure.tools.cli/parse-opts args cli-params)))
 
 (defnp score [net adtree params]
   "Score `net` without learning."
