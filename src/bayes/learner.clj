@@ -33,6 +33,18 @@
    :operation-quality-factor   (:quality params)})
 
 ;
+; Helper functions to manage shared variables
+;
+
+(defn- get-local-base-log-likelihood [learner i]
+  "Get i'th local-base-log-likelihood in `learner`."
+  (nth @(:local-base-log-likelihoods learner) i))
+
+(defn- set-local-base-log-likelihood [learner i v]
+  "Set i'th local-base-log-likelihood in `learner` to `v`."
+  (alter (:local-base-log-likelihoods learner) assoc i v))
+
+;
 ; Helper functions to manage tasks
 ;
 
@@ -274,7 +286,9 @@
         local-base-log-likelihoods (compute-local-base-log-likelihoods vars adtree)
         base-log-likelihood        (sum local-base-log-likelihoods)]
     (dosync
-      (ref-set (:local-base-log-likelihoods learner) local-base-log-likelihoods)
+      (doseq [j (range (count vars))]
+        (set-local-base-log-likelihood learner
+          (nth vars j) (nth local-base-log-likelihoods j)))
       (alter (:base-log-likelihood learner) + base-log-likelihood))
     (let [tasks (filter some?
                   (map-indexed
@@ -312,8 +326,7 @@
   "Returns delta-log-likelihood, and sets the local-base-log-likelihoods and
   n-total-parent of the learner."
   (let [adtree (:adtree learner)
-        to     (:to-id task)
-        local-base-log-likelihoods (:local-base-log-likelihoods learner)]
+        to     (:to-id task)]
     (case (:op task)
       :insert
         (dosync
@@ -324,10 +337,10 @@
                   (compute-local-log-likelihood to adtree
                     queries query-vector parent-query-vector)
                 to-local-base-log-likelihood
-                  (nth @local-base-log-likelihoods to)
+                  (get-local-base-log-likelihood learner to)
                 delta-log-likelihood
                   (- to-local-base-log-likelihood new-base-log-likelihood)]
-            (alter local-base-log-likelihoods assoc to new-base-log-likelihood)
+            (set-local-base-log-likelihood learner to new-base-log-likelihood)
             ; The following happens in a separate tx in the C version, we use
             ; commute to avoid conflicts
             (commute (:n-total-parent learner) inc)
@@ -373,7 +386,7 @@
                          (sort (conj query-vector from-id))
                          (sort (conj parent-query-vector from-id)))})
                 old-local-log-likelihood
-                  (nth @(:local-base-log-likelihoods learner) to-id)
+                  (get-local-base-log-likelihood learner to-id)
                 {best-from-id :from-id best-local-log-likelihood :local-log-likelihood}
                   (->>
                     (conj alternative-local-log-likelihoods
