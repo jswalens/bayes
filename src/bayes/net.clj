@@ -152,5 +152,7 @@
       net
       (for [n (range (count net))
             p (range max-num-parent)]
-        [n p]))))
-      ; TODO: assert (not (is-cycle? net).
+        [n p]))
+    ;(if (has-cycle? net)
+    ;  (println "ERROR: net contains cycle!"))
+    net))
