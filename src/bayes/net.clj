@@ -57,7 +57,7 @@
     net))
 
 ;
-; has-edge? and has-path?
+; has-edge?, has-path?, has-cycle?
 ;
 
 (defn has-edge? [net from-id to-id]
@@ -81,6 +81,29 @@
                 (filter #(not (.contains visited %)) @(get-child-ids net id)))
               (conj visited id))))))))
 
+(defn node-in-cycle? [net id]
+  "Is the node `id` part of a cycle in `net`?"
+  (dosync
+    (loop [to-visit (into []  @(get-child-ids net id))
+           visited  (into #{} @(get-child-ids net id))]
+           ; note: don't add id to visited, so we can revisit it and detect the
+           ; cycle
+      (if (empty? to-visit)
+        false
+        (let [[fst & rst] to-visit]
+          (if (= fst id)
+            true ; reached self
+            (recur
+              (concat
+                rst
+                (filter #(not (.contains visited %)) @(get-child-ids net fst)))
+              (conj visited fst))))))))
+
+(defn has-cycle? [net]
+  "Does `net` contain any cycle? This should never be the case."
+  (dosync
+    (reduce #(or %1 %2) (map #(node-in-cycle? net %) (range (count net))))))
+
 ;
 ; find-descendants
 ;
@@ -88,7 +111,9 @@
 (defn- concat-uniq [xs ys]
   "Concat `xs` and `ys`, but do not add elements in `ys` that are already in
   `xs`."
-  (concat xs (filter #(not (.contains xs %)) ys)))
+  (if (empty? xs)
+    ys
+    (concat xs (filter #(not (.contains xs %)) ys))))
 
 (defn find-descendants [net id]
   "Returns set of descendants of the node `id` in `net`."

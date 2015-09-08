@@ -68,6 +68,14 @@
   (is (not (net/has-path? linear-net 2 0)))
   (is (not (net/has-path? central-net 0 2))))
 
+(deftest has-cycle?
+  (is (not (net/has-cycle? linear-net)))
+  (is (net/has-cycle? (-> linear-net (copy-net) (net/insert-edge 2 0))))
+  (is (net/has-cycle? (-> linear-net (copy-net) (net/insert-edge 1 0))))
+  (is (not (net/has-cycle? central-net)))
+  (is (net/has-cycle? (-> central-net (copy-net) (net/insert-edge 1 0))))
+  (is (not (net/has-cycle? (-> central-net (copy-net) (net/insert-edge 0 2))))))
+
 (deftest concat-uniq
   (are [xs ys expected] (= expected (@#'bayes.net/concat-uniq xs ys))
     [1 2 3] [4 5 6] [1 2 3 4 5 6]
