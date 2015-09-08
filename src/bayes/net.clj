@@ -81,7 +81,7 @@
                 (filter #(not (.contains visited %)) @(get-child-ids net id)))
               (conj visited id))))))))
 
-(defn node-in-cycle? [net id]
+(defn- node-in-cycle? [net id]
   "Is the node `id` part of a cycle in `net`?"
   (dosync
     (loop [to-visit (into []  @(get-child-ids net id))
