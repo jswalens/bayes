@@ -41,7 +41,7 @@
 
 (deftest generate
   (random/set-seed 1)
-  (let [params (assoc main/default-params :record 4 :var 3)
+  (let [params (assoc main/fast-params :record 4 :var 3)
         {data :data net :net} (data/generate params)]
     (is (= (:data generated-data) data))
     (is (= (:net  generated-data) (deref-net net)))))
