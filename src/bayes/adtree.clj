@@ -17,8 +17,8 @@
   {:index       i
    :value       -1
    :count       n
-   :vary-vector (doall (for [v (range (inc i) (:n-var data))]
-                  (make-vary parent-i v start n data)))})
+   :vary-vector (for [v (range (inc i) (:n-var data))]
+                  (make-vary parent-i v start n data))})
 
 (defn- make-vary [parent-i i start n data]
   "Make an element of the vary vector of a node in the adtree."
