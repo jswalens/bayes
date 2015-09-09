@@ -1,5 +1,6 @@
 (ns bayes.adtree
-  (:require [bayes.data :as data]))
+  (:require [bayes.data :as data]
+            [taoensso.timbre.profiling :refer [profile p defnp]]))
 
 ;
 ; make
@@ -40,7 +41,7 @@
                             (make-node i i (+ start n-0) n-1 data)
                             (assoc :value 1)))}))
 
-(defn make [data]
+(defnp make [data]
   "Make ADTree (alternating decision tree) based on `data`."
   {:n-var     (:n-var data)
    :n-record  (:n-record data)

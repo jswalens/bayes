@@ -2,7 +2,8 @@
   (:require [clojure.math.numeric-tower :as math]
             [bitmap]
             [random]
-            [bayes.net :as net]))
+            [bayes.net :as net]
+            [taoensso.timbre.profiling :refer [profile p defnp]]))
 
 (def ^:const DATA_PRECISION 100)
 
@@ -37,7 +38,7 @@
   `xs`."
   (concat xs (filter #(not (.contains xs %)) ys)))
 
-(defn generate [params]
+(defnp generate [params]
   "Allocate and generate data, returns `{:data data :net net}`.
 
   This replaces the C version's alloc and generate functions.
