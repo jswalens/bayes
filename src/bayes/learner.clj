@@ -353,69 +353,71 @@
   of the normal compare."
   (compare b a))
 
-(defn- find-best-insert-task [learner to-id n-total-parent base-penalty base-log-likelihood]
+(defnp find-best-insert-task [learner to-id n-total-parent base-penalty base-log-likelihood]
   "Finds a task that inserts an edge into the net, such that the local log
   likelihood is maximally increased. Returns this task, or a 'dummy' one if none
   was found."
   (let [net    (:net learner)
         adtree (:adtree learner)]
-    (dosync
-      (let [parent-ids           @(net/get-parent-ids net to-id)
-            max-num-edge-learned (:max-num-edge-learned learner)]
-        (if (or (< max-num-edge-learned 0)
-                (<= (count parent-ids) max-num-edge-learned))
-          (let [; Search all possible valid operations for better local log
-                ; likelihood
-                invalid-ids
-                  ; Don't search any descendant, immediate parents, or self
-                  (-> (net/find-descendants net to-id)
-                    (into parent-ids)
-                    (conj to-id))
-                queries
-                  (create-queries (:n-var adtree))
-                {query-vector :query-vector parent-query-vector :parent-query-vector}
-                  (populate-query-vectors net to-id)
-                alternative-local-log-likelihoods
-                  (for [from-id (range (:n-var adtree))
-                        :when (not (.contains invalid-ids from-id))]
-                    {:from-id from-id
-                     :local-log-likelihood
-                       (compute-local-log-likelihood
-                         to-id
-                         adtree
-                         queries
-                         (sort (conj query-vector from-id))
-                         (sort (conj parent-query-vector from-id)))})
-                old-local-log-likelihood
-                  (get-local-base-log-likelihood learner to-id)
-                {best-from-id :from-id best-local-log-likelihood :local-log-likelihood}
-                  (->>
-                    (conj alternative-local-log-likelihoods
-                      ; or, nothing happens:
-                      {:from-id to-id :local-log-likelihood old-local-log-likelihood})
-                    (sort-by :local-log-likelihood compare-higher)
-                    (first)) ; find one with highest local-log-likelihood
-                score
-                  (if (= best-from-id to-id)
-                    0.0 ; best to do nothing
-                    (let [n-record (:n-record adtree)
-                          n-parent (inc (count parent-ids))
-                          penalty  (* base-penalty
-                                      (+ n-total-parent
-                                         (* n-parent (:insert-penalty learner))))
-                          log-likelihood (* n-record
-                                            (+ base-log-likelihood
-                                               best-local-log-likelihood
-                                               (- old-local-log-likelihood)))]
-                      (+ penalty log-likelihood)))]
-            {:op      :insert
-             :from-id best-from-id
-             :to-id   to-id
-             :score   score})
-          {:op      :insert
-           :from-id to-id
-           :to-id   to-id
-           :score   0.0})))))
+    (p :find-best-insert-task-out-tx
+      (dosync
+        (p :find-best-insert-task-in-tx
+          (let [parent-ids           @(net/get-parent-ids net to-id)
+                max-num-edge-learned (:max-num-edge-learned learner)]
+            (if (or (< max-num-edge-learned 0)
+                    (<= (count parent-ids) max-num-edge-learned))
+              (let [; Search all possible valid operations for better local log
+                    ; likelihood
+                    invalid-ids
+                      ; Don't search any descendant, immediate parents, or self
+                      (-> (net/find-descendants net to-id)
+                        (into parent-ids)
+                        (conj to-id))
+                    queries
+                      (create-queries (:n-var adtree))
+                    {query-vector :query-vector parent-query-vector :parent-query-vector}
+                      (populate-query-vectors net to-id)
+                    alternative-local-log-likelihoods
+                      (for [from-id (range (:n-var adtree))
+                            :when (not (.contains invalid-ids from-id))]
+                        {:from-id from-id
+                         :local-log-likelihood
+                           (compute-local-log-likelihood
+                             to-id
+                             adtree
+                             queries
+                             (sort (conj query-vector from-id))
+                             (sort (conj parent-query-vector from-id)))})
+                    old-local-log-likelihood
+                      (get-local-base-log-likelihood learner to-id)
+                    {best-from-id :from-id best-local-log-likelihood :local-log-likelihood}
+                      (->>
+                        (conj alternative-local-log-likelihoods
+                          ; or, nothing happens:
+                          {:from-id to-id :local-log-likelihood old-local-log-likelihood})
+                        (sort-by :local-log-likelihood compare-higher)
+                        (first)) ; find one with highest local-log-likelihood
+                    score
+                      (if (= best-from-id to-id)
+                        0.0 ; best to do nothing
+                        (let [n-record (:n-record adtree)
+                              n-parent (inc (count parent-ids))
+                              penalty  (* base-penalty
+                                          (+ n-total-parent
+                                             (* n-parent (:insert-penalty learner))))
+                              log-likelihood (* n-record
+                                                (+ base-log-likelihood
+                                                   best-local-log-likelihood
+                                                   (- old-local-log-likelihood)))]
+                          (+ penalty log-likelihood)))]
+                {:op      :insert
+                 :from-id best-from-id
+                 :to-id   to-id
+                 :score   score})
+              {:op      :insert
+               :from-id to-id
+               :to-id   to-id
+               :score   0.0})))))))
 
 (defnp find-next-task [learner n-total-parent base-log-likelihood to-id]
   (let [n-record     (:n-record (:adtree learner))
