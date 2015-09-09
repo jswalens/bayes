@@ -1,6 +1,7 @@
 (ns bayes.learner
   (:require [bayes.net :as net]
-            [bayes.adtree :as adtree]))
+            [bayes.adtree :as adtree]
+            [taoensso.timbre.profiling :refer [profile p defnp]]))
 
 ;
 ; alloc
@@ -278,7 +279,7 @@
          :score   score})
       nil)))
 
-(defn- create-tasks [learner i n]
+(defnp create-tasks [learner i n]
   "Create tasks and add them to learner. This is thread `i` of `n`."
   (let [adtree                     (:adtree learner)
         vars                       (create-partition 0 (:n-var adtree) i n)
@@ -300,7 +301,7 @@
       (println "tasks created by thread" i ":" tasks)
       (add-tasks (:tasks learner) tasks))))
 
-(defn- is-task-valid? [task net]
+(defnp is-task-valid? [task net]
   (let [from (:from-id task)
         to   (:to-id task)]
     (case (:op task)
@@ -314,7 +315,7 @@
                    valid?))
       (println "ERROR: unknown task operation type" (:op task)))))
 
-(defn- apply-task [task net]
+(defnp apply-task [task net]
   "Apply `task` to `net`. Updates `net`."
   ((case (:op task)
     :insert  net/insert-edge
@@ -322,7 +323,7 @@
     :reverse net/reverse-edge)
     net (:from-id task) (:to-id task)))
 
-(defn- calculate-delta-log-likelihood [task learner]
+(defnp calculate-delta-log-likelihood [task learner]
   "Returns delta-log-likelihood, and sets the local-base-log-likelihoods and
   n-total-parent of the learner."
   (let [adtree (:adtree learner)
@@ -416,7 +417,7 @@
            :to-id   to-id
            :score   0.0})))))
 
-(defn- find-next-task [learner n-total-parent base-log-likelihood to-id]
+(defnp find-next-task [learner n-total-parent base-log-likelihood to-id]
   (let [n-record     (:n-record (:adtree learner))
         base-penalty (* -0.5 (Math/log (double n-record)))
         base-score   (+ (* n-total-parent base-penalty)
@@ -429,40 +430,42 @@
       new-task
       {:op :num :to-id -1 :from-id -1 :score base-score})))
 
-(defn- learn-structure [learner i n]
+(defnp process-task [task learner i]
+  (let [valid?
+          (dosync ; Updates the net
+            (if (is-task-valid? task (:net learner))
+              ; If task is still valid, update graph and probabilities
+              (do
+                (apply-task task (:net learner))
+                true)
+              false))
+        _ (println "task processed by thread" i ":" task
+            (if valid? "(valid)" "(invalid)"))
+        delta-log-likelihood
+          (if valid?
+            (calculate-delta-log-likelihood task learner)
+            0.0)
+        ; Update/read globals
+        [base-log-likelihood n-total-parent]
+          (dosync
+            [(alter (:base-log-likelihood learner) + delta-log-likelihood)
+             @(:n-total-parent learner)])
+        ; Find next task
+        best-task
+          (find-next-task learner n-total-parent base-log-likelihood
+            (:to-id task))]
+    (when (not= (:to-id best-task) -1)
+      (println "new task on thread" i ":" best-task)
+      (add-task (:tasks learner) best-task))))
+
+(defnp learn-structure [learner i n]
   (loop []
     (let [task (pop-task (:tasks learner))]
       (when (not (nil? task))
-        (let [net    (:net learner)
-              valid?
-                (dosync ; Updates the net
-                  (if (is-task-valid? task net)
-                    ; If task is still valid, update graph and probabilities
-                    (do
-                      (apply-task task net)
-                      true)
-                    false))
-              _ (println "task processed by thread" i ":" task
-                  (if valid? "(valid)" "(invalid)"))
-              delta-log-likelihood
-                (if valid?
-                  (calculate-delta-log-likelihood task learner)
-                  0.0)
-              ; Update/read globals
-              [base-log-likelihood n-total-parent]
-                (dosync
-                  [(alter (:base-log-likelihood learner) + delta-log-likelihood)
-                   @(:n-total-parent learner)])
-              ; Find next task
-              best-task
-                (find-next-task learner n-total-parent base-log-likelihood
-                  (:to-id task))]
-          (when (not= (:to-id best-task) -1)
-            (println "new task on thread" i ":" best-task)
-            (add-task (:tasks learner) best-task)))
+        (process-task task learner i)
         (recur)))))
 
-(defn run [learner]
+(defnp run [learner]
   "Learn structure of the network, updates it."
   (let [n-thread    (:n-thread learner)
         create-futs (map #(future (create-tasks    learner % n-thread)) (range n-thread))
