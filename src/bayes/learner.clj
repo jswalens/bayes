@@ -353,6 +353,17 @@
   of the normal compare."
   (compare b a))
 
+(defmacro for-all [seq-exprs body-expr]
+  `(doall
+    (for ~seq-exprs
+      ~body-expr)))
+
+(defmacro parallel-for-all [seq-exprs body-expr]
+  `(map deref
+    (doall
+      (for ~seq-exprs
+        (future ~body-expr)))))
+
 (defnp find-best-insert-task [learner to-id n-total-parent base-penalty base-log-likelihood]
   "Finds a task that inserts an edge into the net, such that the local log
   likelihood is maximally increased. Returns this task, or a 'dummy' one if none
@@ -380,17 +391,16 @@
                       (p :3-query-vectors (populate-query-vectors net to-id))
                     alternative-local-log-likelihoods
                       (p :4-alternatives
-                        (doall
-                          (for [from-id (range (:n-var adtree))
-                                :when (not (.contains invalid-ids from-id))]
-                            {:from-id from-id
-                             :local-log-likelihood
-                               (compute-local-log-likelihood
-                                 to-id
-                                 adtree
-                                 queries
-                                 (sort (conj query-vector from-id))
-                                 (sort (conj parent-query-vector from-id)))})))
+                        (for-all [from-id (range (:n-var adtree))
+                                  :when (not (.contains invalid-ids from-id))]
+                          {:from-id from-id
+                           :local-log-likelihood
+                             (compute-local-log-likelihood
+                               to-id
+                               adtree
+                               queries
+                               (sort (conj query-vector from-id))
+                               (sort (conj parent-query-vector from-id)))}))
                     old-local-log-likelihood
                       (p :5-old
                         (get-local-base-log-likelihood learner to-id))
