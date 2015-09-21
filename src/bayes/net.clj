@@ -1,7 +1,8 @@
 (ns bayes.net
   (:require [priority-queue]
             [bitmap]
-            [random]))
+            [random]
+            [log :refer [log]]))
 
 ;
 ; alloc
@@ -124,7 +125,7 @@
         descendants
         (let [child-id (peek queue)]
           (if (= child-id id)
-            (println "ERROR: could not find descendants: node" id
+            (log "ERROR: could not find descendants: node" id
               "is a descendant of itself (net contains a cycle)")
             (recur
               (into descendants @(get-child-ids net child-id))
@@ -154,5 +155,5 @@
             p (range max-num-parent)]
         [n p]))
     ;(if (has-cycle? net)
-    ;  (println "ERROR: net contains cycle!"))
+    ;  (log "ERROR: net contains cycle!"))
     net))

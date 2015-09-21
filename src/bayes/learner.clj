@@ -1,6 +1,7 @@
 (ns bayes.learner
   (:require [bayes.net :as net]
             [bayes.adtree :as adtree]
+            [log :refer [log]]
             [taoensso.timbre.profiling :refer [profile p defnp]]))
 
 ;
@@ -298,7 +299,7 @@
                         (nth local-base-log-likelihoods v_i)))
                     vars))]
           ; TODO: maybe doall to force execution before tx?
-      (println "tasks created by thread" i ":" tasks)
+      (log "tasks created by thread" i ":" tasks)
       (add-tasks (:tasks learner) tasks))))
 
 (defnp is-task-valid? [task net]
@@ -313,7 +314,7 @@
                  (let [valid? (not (net/has-path? net from to))]
                    (net/insert-edge net from to)
                    valid?))
-      (println "ERROR: unknown task operation type" (:op task)))))
+      (log "ERROR: unknown task operation type" (:op task)))))
 
 (defnp apply-task [task net]
   "Apply `task` to `net`. Updates `net`."
@@ -346,7 +347,7 @@
             ; commute to avoid conflicts
             (commute (:n-total-parent learner) inc)
             delta-log-likelihood))
-      (println "ERROR: unknown task operation type" (:op task)))))
+      (log "ERROR: unknown task operation type" (:op task)))))
 
 (defn- compare-higher [a b]
   "A comparator returning +1 if a < b, 0 if a = b, and -1 if a > b, the opposite
@@ -457,7 +458,7 @@
                 (apply-task task (:net learner))
                 true)
               false))
-        _ (println "task processed by thread" i ":" task
+        _ (log "task processed by thread" i ":" task
             (if valid? "(valid)" "(invalid)"))
         delta-log-likelihood
           (if valid?
@@ -473,7 +474,7 @@
           (find-next-task learner n-total-parent base-log-likelihood
             (:to-id task))]
     (when (not= (:to-id best-task) -1)
-      (println "new task on thread" i ":" best-task)
+      (log "new task on thread" i ":" best-task)
       (add-task (:tasks learner) best-task))))
 
 (defnp learn-structure [learner i n]
@@ -481,6 +482,8 @@
     (let [task (pop-task (:tasks learner))]
       (when (not (nil? task))
         (process-task task learner i)
+        (when (net/has-cycle? (:net learner))
+          (log "ERROR: net now contains cycle!!!!!!!!!"))
         (recur)))))
 
 (defnp run [learner]

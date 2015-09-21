@@ -1,5 +1,6 @@
 (ns bayes.adtree
   (:require [bayes.data :as data]
+            [log :refer [log]]
             [taoensso.timbre.profiling :refer [profile p defnp]]))
 
 ;
@@ -98,7 +99,7 @@
                   (- super-count invert-count)]
             (if (< diff 0)
               (do
-                (println "ERROR: super count <= invert count, circumventing")
+                (log "ERROR: super count <= invert count, circumventing")
                 0)
               diff))
           (case query-value
