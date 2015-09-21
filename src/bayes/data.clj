@@ -62,7 +62,7 @@
                  done  (bitmap/create n-var)] ; nodes that have been visited
             (if (nil? id)
               order ; bitmap/find-clear found no more nodes => everything's done
-              (if (not= (count @(net/get-child-ids net id)) 0)
+              (if (not= (count (net/child-ids net id)) 0)
                 ; This node has children
                 (recur (bitmap/find-clear done (inc id)) order done)
                 ; This node has no children, it is a leaf
@@ -75,7 +75,7 @@
                             dependencies
                             (let [[fst & rst] queue]
                               (recur
-                                (vec (concat rst @(net/get-parent-ids net fst)))
+                                (vec (concat rst (net/parent-ids net fst)))
                                 (conj dependencies fst)))))
                       done-1
                         (reduce #(bitmap/set %1 %2) done dependencies)
@@ -90,7 +90,7 @@
         ; for each of its parents, this returns a (randomly generated) integer.
         thresholds
           (for [v (range n-var)]
-            (for [t (range (math/expt 2 (count @(net/get-parent-ids net v))))]
+            (for [t (range (math/expt 2 (count (net/parent-ids net v))))]
               (random/rand-int (inc DATA_PRECISION))))
         ; Create records
         ; records is a list mapping each record id to a record, which is a list
@@ -101,7 +101,7 @@
               (fn [record o]
                 (let [id        (nth order o)
                       values    ; list of 0s and 1s
-                                (for [p @(net/get-parent-ids net id)]
+                                (for [p (net/parent-ids net id)]
                                   ; ordering ensures that p < o (see [1]), so
                                   ; record will have index p at iteration o of
                                   ; the reduce

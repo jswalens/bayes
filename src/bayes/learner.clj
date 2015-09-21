@@ -108,7 +108,7 @@
 (defn- populate-parent-query-vector [net id]
   "Returns parent-query-vector for node with `id`.
   Should be called in transaction."
-  @(net/get-parent-ids net id))
+  (net/parent-ids net id))
 
 (defn- populate-query-vectors [net id]
   "Returns {:query-vector ... :parent-query-vector ...} for node with `id`.
@@ -171,7 +171,7 @@
           (dosync
             (sum
               (map
-                (fn [v] (count @(net/get-parent-ids (:net learner) v)))
+                (fn [v] (count (net/parent-ids (:net learner) v)))
                 (range n-var))))
         log-likelihood
           (sum
@@ -374,7 +374,7 @@
     (p :find-best-insert-task-out-tx
       (dosync
         (p :find-best-insert-task-in-tx
-          (let [parent-ids           @(net/get-parent-ids net to-id)
+          (let [parent-ids           (net/parent-ids net to-id)
                 max-num-edge-learned (:max-num-edge-learned learner)]
             (if (or (< max-num-edge-learned 0)
                     (<= (count parent-ids) max-num-edge-learned))
@@ -482,8 +482,6 @@
     (let [task (pop-task (:tasks learner))]
       (when (not (nil? task))
         (process-task task learner i)
-        (when (net/has-cycle? (:net learner))
-          (log "ERROR: net now contains cycle!!!!!!!!!"))
         (recur)))))
 
 (defnp run [learner]

@@ -9,28 +9,46 @@
 ;
 
 (defn- alloc-node [id]
-  "Returns an empty node with `id`."
-  {:id         id
-   :parent-ids (ref (priority-queue/create))   ; ordered list of parent ids
-   :child-ids  (ref (priority-queue/create))}) ; ordered list of child ids
+  "Returns an empty node with `id`.
+
+  The node is a ref. This is unlike the C version, where the parent-ids and
+  child-ids are separate refs. However, we want a transaction that updates the
+  parent-ids and another transaction that updates the child-ids to conflict:
+  otherwise, it is possible to introduce cycles. For instance, if transaction
+  A inserts an edge from node 1 to 2 (updating 1's childs and 2's parents), and
+  transaction B inserts an edge from 2 to 1 (updating 2's childs and 1's
+  parents), this creates a cycle. Therefore, these two transactions should
+  conflict. This is achieved by making the node a ref, instead of the separate
+  parent and child lists.
+  XXX: How does the C version prevent this issue?"
+  (ref
+    {:id         id
+     :parent-ids (priority-queue/create)    ; ordered list of parent ids
+     :child-ids  (priority-queue/create)})) ; ordered list of child ids
 
 (defn alloc [n]
   "Returns a net of `n` nodes."
   (vec (map alloc-node (range n))))
 
 ;
-; get-parent-ids and get-child-ids
+; node, parent-ids and child-ids
 ;
 
-(defn get-parent-ids [net id]
-  "Get ids of parents of node `id` in `net`."
-  ; TODO: Should the @ be here, or in the caller of this function (to show it
-  ; should be in a transaction)
-  (:parent-ids (nth net id)))
+(defn node [net id]
+  "Get node (ref) `id` in `net`."
+  (nth net id))
 
-(defn get-child-ids [net id]
-  "Get ids of children of node `id` in `net`."
-  (:child-ids (nth net id)))
+(defn parent-ids [net id]
+  "Get ids of parents of node `id` in `net`.
+
+  Should be called in a transaction."
+  (:parent-ids @(nth net id)))
+
+(defn child-ids [net id]
+  "Get ids of children of node `id` in `net`.
+
+  Should be called in a transaction."
+  (:child-ids @(nth net id)))
 
 ;
 ; insert, remove and reverse edge
@@ -39,15 +57,15 @@
 (defn insert-edge [net from-id to-id]
   "Adds an edge from `from-id` to `to-id` in `net`."
   (dosync
-    (alter (get-parent-ids net to-id) priority-queue/add from-id)
-    (alter (get-child-ids net from-id) priority-queue/add to-id)
+    (alter (node net to-id) update-in [:parent-ids] priority-queue/add from-id)
+    (alter (node net from-id) update-in [:child-ids] priority-queue/add to-id)
     net))
 
 (defn remove-edge [net from-id to-id]
   "Removes the edge from `from-id` to `to-id` in `net`."
   (dosync
-    (alter (get-parent-ids net to-id) priority-queue/remove from-id)
-    (alter (get-child-ids net from-id) priority-queue/remove to-id)
+    (alter (node net to-id) update-in [:parent-ids] priority-queue/remove from-id)
+    (alter (node net from-id) update-in [:child-ids] priority-queue/remove to-id)
     net))
 
 (defn reverse-edge [net from-id to-id]
@@ -64,7 +82,7 @@
 (defn has-edge? [net from-id to-id]
   "Does `net` have an edge between the nodes with ids `from-id` and `to-id`?"
   (dosync
-    (.contains @(get-parent-ids net to-id) from-id)))
+    (.contains (parent-ids net to-id) from-id)))
 
 (defn has-path? [net from-id to-id]
   "Returns true if there is a path from `from-id` to `to-id` in `net`."
@@ -79,14 +97,14 @@
             (recur
               (concat
                 (rest queue)
-                (filter #(not (.contains visited %)) @(get-child-ids net id)))
+                (filter #(not (.contains visited %)) (child-ids net id)))
               (conj visited id))))))))
 
 (defn- node-in-cycle? [net id]
   "Is the node `id` part of a cycle in `net`?"
   (dosync
-    (loop [to-visit (into []  @(get-child-ids net id))
-           visited  (into #{} @(get-child-ids net id))]
+    (loop [to-visit (into []  (child-ids net id))
+           visited  (into #{} (child-ids net id))]
            ; note: don't add id to visited, so we can revisit it and detect the
            ; cycle
       (if (empty? to-visit)
@@ -97,7 +115,7 @@
             (recur
               (concat
                 rst
-                (filter #(not (.contains visited %)) @(get-child-ids net fst)))
+                (filter #(not (.contains visited %)) (child-ids net fst)))
               (conj visited fst))))))))
 
 (defn has-cycle? [net]
@@ -119,8 +137,8 @@
 (defn find-descendants [net id]
   "Returns set of descendants of the node `id` in `net`."
   (dosync
-    (loop [descendants (into #{} @(get-child-ids net id))
-           queue       (into []  @(get-child-ids net id))]
+    (loop [descendants (into #{} (child-ids net id))
+           queue       (into []  (child-ids net id))]
       (if (empty? queue)
         descendants
         (let [child-id (peek queue)]
@@ -128,8 +146,8 @@
             (log "ERROR: could not find descendants: node" id
               "is a descendant of itself (net contains a cycle)")
             (recur
-              (into descendants @(get-child-ids net child-id))
-              (vec (concat-uniq (pop queue) @(get-child-ids net child-id))))))))))
+              (into descendants (child-ids net child-id))
+              (vec (concat-uniq (pop queue) (child-ids net child-id))))))))))
 
 ;
 ; generate-random-edges
