@@ -5,7 +5,8 @@
             [bayes.data :as data]
             [bayes.adtree :as adtree]
             [bayes.learner :as learner]
-            [taoensso.timbre.profiling :refer [profile p defnp]]))
+            [taoensso.timbre :as timbre]
+            [taoensso.timbre.profiling :refer [profile p]]))
 
 (def cli-params
   [["-e" "--edge UINT"    "Max [e]dges learned per variable (-1 for no limit)"
@@ -35,7 +36,9 @@
    ["-v" "--var UINT"     "Number of [v]ariables"
     :default 16
     :parse-fn #(Integer/parseInt %)]
-   ["-h" "--help"]])
+   ["-h" "--help"]
+   [""   "--profile"      "Enable profiling"
+    :default false]])
 
 (def c-params
   ; Default parameters of C version
@@ -116,27 +119,28 @@ Options:
   Ignores errors."
   (:options (clojure.tools.cli/parse-opts args cli-params)))
 
-(defnp score [net adtree params]
+(defn score [net adtree params]
   "Score `net` without learning."
   (let [learner (assoc (learner/alloc adtree params) :net net)]
     (learner/score learner)))
 
-(defnp -main [& args]
+(defn -main [& args]
   "Main function. `args` should be a list of command line arguments."
-  (profile :info :all
-    ; Initialization
-    (let [params (p :parse-args (parse-args args))]
-      (println "Random seed                =" (:seed params))
-      (println "Number of vars             =" (:var params))
-      (println "Number of records          =" (:record params))
-      (println "Max num parents            =" (:number params))
-      (println "% chance of parent         =" (:percent params))
-      (println "Insert penalty             =" (:insert params))
-      (println "Max num edge learned / var =" (:edge params))
-      (println "Operation quality factor   =" (:quality params))
-      ; Generate data
-      (println "Generating data...")
-      (random/set-seed (:seed params))
+  ; Initialization
+  (let [params (parse-args args)]
+    (println "Random seed                =" (:seed params))
+    (println "Number of vars             =" (:var params))
+    (println "Number of records          =" (:record params))
+    (println "Max num parents            =" (:number params))
+    (println "% chance of parent         =" (:percent params))
+    (println "Insert penalty             =" (:insert params))
+    (println "Max num edge learned / var =" (:edge params))
+    (println "Operation quality factor   =" (:quality params))
+    (random/set-seed (:seed params))
+    (timbre/set-level! (if (:profile params) :trace :error))
+    ; Generate data
+    (println "Generating data...")
+    (profile :trace :all
       (let [{data :data net :net} (p :generate-data (data/generate params))
             _ (println "done.")
             ; Generate adtree
