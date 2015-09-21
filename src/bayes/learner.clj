@@ -489,7 +489,9 @@
 (defnp run [learner]
   "Learn structure of the network, updates it."
   (let [n-thread    (:n-thread learner)
-        create-futs (map #(future (create-tasks    learner % n-thread)) (range n-thread))
-        learn-futs  (map #(future (learn-structure learner % n-thread)) (range n-thread))]
-    (doseq [f create-futs] (deref f))
-    (doseq [f learn-futs]  (deref f))))
+        par-map     (fn [f] (map (fn [i] (future (f i))) (range n-thread)))
+        par-deref   (fn [futs] (doseq [f futs] (deref f)))
+        create-futs (par-map #(create-tasks    learner % n-thread))
+        learn-futs  (par-map #(learn-structure learner % n-thread))]
+    (par-deref create-futs)
+    (par-deref learn-futs)))
