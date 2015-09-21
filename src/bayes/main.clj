@@ -141,7 +141,8 @@ Options:
     ; Generate data
     (println "Generating data...")
     (profile :trace :all
-      (let [{data :data net :net} (p :generate-data (data/generate params))
+      (let [{data :data net :net}
+              (p :generate-data (time (data/generate params)))
             _ (println "done.")
             ; Generate adtree
             _ (println "Generating adtree...")
