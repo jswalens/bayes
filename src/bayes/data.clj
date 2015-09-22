@@ -36,7 +36,9 @@
 (defn- concat-uniq [xs ys]
   "Concat `xs` and `ys`, but do not add elements in `ys` that are already in
   `xs`."
-  (concat xs (filter #(not (.contains xs %)) ys)))
+  (if (empty? xs)
+    ys
+    (concat xs (filter #(not (.contains xs %)) ys))))
 
 (defnp generate [params]
   "Allocate and generate data, returns `{:data data :net net}`.
@@ -75,7 +77,7 @@
                             dependencies
                             (let [[fst & rst] queue]
                               (recur
-                                (vec (concat rst (net/parent-ids net fst)))
+                                (vec (concat-uniq rst (net/parent-ids net fst)))
                                 (conj dependencies fst)))))
                       done-1
                         (reduce #(bitmap/set %1 %2) done dependencies)
