@@ -17,17 +17,11 @@
       (net/insert-edge 2 1))))
 
 (defn- deref-net [net]
-  (for [n net]
-    (-> n
-      (update-in [:parent-ids] deref)
-      (update-in [:child-ids] deref))))
+  (map deref net))
 
 (defn- copy-net [net]
   (dosync
-    (for [n net]
-      (-> n
-        (update-in [:parent-ids] #(ref (deref %)))
-        (update-in [:child-ids]  #(ref (deref %)))))))
+    (map ref (map deref net))))
 
 (deftest alloc-insert
   (is (=

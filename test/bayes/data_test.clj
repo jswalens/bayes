@@ -34,10 +34,7 @@
           {:id 2 :parent-ids '()  :child-ids '(1)}]})
 
 (defn- deref-net [net]
-  (for [n net]
-    (-> n
-      (update-in [:parent-ids] deref)
-      (update-in [:child-ids] deref))))
+  (map deref net))
 
 (deftest generate
   (random/set-seed 1)
