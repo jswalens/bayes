@@ -72,17 +72,17 @@
                       ; leaf (i.e. ancestors of this leaf)
                       dependencies
                         (loop [queue        [id]
-                               dependencies []]
+                               dependencies (list)]
                           (if (empty? queue)
                             dependencies
                             (let [[fst & rst] queue]
                               (recur
                                 (vec (concat-uniq rst (net/parent-ids net fst)))
-                                (conj dependencies fst)))))
+                                (cons fst dependencies)))))
                       done-1
                         (reduce #(bitmap/set %1 %2) done dependencies)
                       order-1
-                        (concat-uniq order (reverse dependencies))]
+                        (concat-uniq order dependencies)]
                   (recur (bitmap/find-clear done (inc id)) order-1 done-1)))))
         ; Create a threshold for each of the possible permutations of variable
         ; value instances.
