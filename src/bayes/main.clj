@@ -124,7 +124,7 @@ Options:
   (let [learner (assoc (learner/alloc adtree params) :net net)]
     (learner/score learner)))
 
-(defn -main [& args]
+(defn main [args]
   "Main function. `args` should be a list of command line arguments."
   ; Initialization
   (let [params (parse-args args)]
@@ -164,10 +164,14 @@ Options:
             _ (println "Learn score  =" learn-score)
             _ (println "Actual score =" actual-score)]
         nil)))
-  ; Clean up
+  ; Eliminate one minute wait (see doc shutdown-agents)
   ; shutdown-agents should be after profile, else RejectedExecutionException is
   ; raised in timbre
   (shutdown-agents))
+
+(defn -main [& args]
+  "Main function. `args` should be a list of command line arguments."
+  (time (main args)))
 
 ; To run manually:
 ;(main *command-line-args*)
