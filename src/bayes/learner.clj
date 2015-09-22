@@ -4,6 +4,17 @@
             [log :refer [log]]
             [taoensso.timbre.profiling :refer [profile p defnp]]))
 
+(defmacro for-all [seq-exprs body-expr]
+  `(doall
+    (for ~seq-exprs
+      ~body-expr)))
+
+(defmacro parallel-for-all [seq-exprs body-expr]
+  `(map deref
+    (doall
+      (for ~seq-exprs
+        (future ~body-expr)))))
+
 ;
 ; alloc
 ;
@@ -170,22 +181,20 @@
         n-total-parent
           (dosync
             (sum
-              (map
-                (fn [v] (count (net/parent-ids (:net learner) v)))
-                (range n-var))))
+              (for [v (range n-var)]
+                (count (net/parent-ids (:net learner) v)))))
         log-likelihood
           (sum
-            (map
-              (fn [v]
-                (let [{query-vector :query-vector parent-query-vector :parent-query-vector}
-                        (populate-query-vectors (:net learner) v)]
-                  (compute-local-log-likelihood
-                    v
-                    (:adtree learner)
-                    queries
-                    query-vector
-                    parent-query-vector)))
-              (range n-var)))
+            ; Following for can take a long time: optimizable using parallel-for-all
+            (for [v (range n-var)]
+              (let [{query-vector :query-vector parent-query-vector :parent-query-vector}
+                      (populate-query-vectors (:net learner) v)]
+                (compute-local-log-likelihood
+                  v
+                  (:adtree learner)
+                  queries
+                  query-vector
+                  parent-query-vector))))
         n-record (:n-record (:adtree learner))
         penalty  (* -0.5 n-total-parent (Math/log n-record))
         score    (+ penalty (* n-record log-likelihood))]
@@ -353,17 +362,6 @@
   "A comparator returning +1 if a < b, 0 if a = b, and -1 if a > b, the opposite
   of the normal compare."
   (compare b a))
-
-(defmacro for-all [seq-exprs body-expr]
-  `(doall
-    (for ~seq-exprs
-      ~body-expr)))
-
-(defmacro parallel-for-all [seq-exprs body-expr]
-  `(map deref
-    (doall
-      (for ~seq-exprs
-        (future ~body-expr)))))
 
 (defnp find-best-insert-task [learner to-id n-total-parent base-penalty base-log-likelihood]
   "Finds a task that inserts an edge into the net, such that the local log

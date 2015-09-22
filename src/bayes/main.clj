@@ -119,7 +119,7 @@ Options:
   Ignores errors."
   (:options (clojure.tools.cli/parse-opts args cli-params)))
 
-(defn score [net adtree params]
+(defn score-original [net adtree params]
   "Score `net` without learning."
   (let [learner (assoc (learner/alloc adtree params) :net net)]
     (learner/score learner)))
@@ -149,7 +149,7 @@ Options:
             adtree (p :generate-adtree (time (adtree/make data)))
             _ (println "done.")
             ; Score original network
-            actual-score (p :score-original (score net adtree params))
+            actual-score (p :score-original (score-original net adtree params))
             _ (println "actual score:" actual-score)
             ; Learn structure of Bayesian network
             _ (println "Learning structure...")
