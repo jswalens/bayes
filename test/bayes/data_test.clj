@@ -43,6 +43,46 @@
     (is (= (:data generated-data) data))
     (is (= (:net  generated-data) (deref-net net)))))
 
+(def generated-net-2
+  [{:id 0  :parent-ids '(8 13 14 15)        :child-ids '(7 9 11)}
+   {:id 1  :parent-ids '(10 14 21 26 28 29) :child-ids '(27)}
+   {:id 2  :parent-ids '(9)                 :child-ids '(6)}
+   {:id 3  :parent-ids '(23)                :child-ids '(4 10 24)}
+   {:id 4  :parent-ids '(3 10 15 22)        :child-ids '()}
+   {:id 5  :parent-ids '(21)                :child-ids '()}
+   {:id 6  :parent-ids '(2 9)               :child-ids '()}
+   {:id 7  :parent-ids '(0 15 17)           :child-ids '()}
+   {:id 8  :parent-ids '(25)                :child-ids '(0 24)}
+   {:id 9  :parent-ids '(0 18 19 20 24)     :child-ids '(2 6 12)}
+   {:id 10 :parent-ids '(3 11 22)           :child-ids '(1 4)}
+   {:id 11 :parent-ids '(0 15)              :child-ids '(10)}
+   {:id 12 :parent-ids '(9 18 20 23 26)     :child-ids '()}
+   {:id 13 :parent-ids '(16 29)             :child-ids '(0 19)}
+   {:id 14 :parent-ids '(31)                :child-ids '(0 1 22 28)}
+   {:id 15 :parent-ids '(19 23 30)          :child-ids '(0 4 7 11)}
+   {:id 16 :parent-ids '(17 24)             :child-ids '(13 19)}
+   {:id 17 :parent-ids '(20 24 31)          :child-ids '(7 16)}
+   {:id 18 :parent-ids '(20 24 25)          :child-ids '(9 12)}
+   {:id 19 :parent-ids '(13 16 25 29)       :child-ids '(9 15)}
+   {:id 20 :parent-ids '(23)                :child-ids '(9 12 17 18)}
+   {:id 21 :parent-ids '(26 28)             :child-ids '(1 5 24 25)}
+   {:id 22 :parent-ids '(14)                :child-ids '(4 10 23)}
+   {:id 23 :parent-ids '(22 25)             :child-ids '(3 12 15 20 27)}
+   {:id 24 :parent-ids '(3 8 21)            :child-ids '(9 16 17 18 27)}
+   {:id 25 :parent-ids '(21 26)             :child-ids '(8 18 19 23 30)}
+   {:id 26 :parent-ids '()                  :child-ids '(1 12 21 25)}
+   {:id 27 :parent-ids '(1 23 24 31)        :child-ids '()}
+   {:id 28 :parent-ids '(14)                :child-ids '(1 21)}
+   {:id 29 :parent-ids '(30)                :child-ids '(1 13 19)}
+   {:id 30 :parent-ids '(25)                :child-ids '(15 29)}
+   {:id 31 :parent-ids '()                  :child-ids '(14 17 27)}])
+
+(deftest generate-2
+  (random/set-seed 5)
+  (let [params {:number 10 :percent 30 :record 512 :var 32}
+        {data :data net :net} (data/generate params)]
+    (is (= generated-net-2 (deref-net net)))))
+
 (deftest compare-record
   (are [a b offset expected] (= expected (@#'bayes.data/compare-record a b offset))
     [0 0 0] [0 0 0] 0 0  ; equal
