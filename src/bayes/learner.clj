@@ -365,8 +365,8 @@
 
 (defnp find-best-insert-task [learner to-id n-total-parent base-penalty base-log-likelihood]
   "Finds a task that inserts an edge into the net, such that the local log
-  likelihood is maximally increased. Returns this task, or a 'dummy' one if none
-  was found."
+  likelihood is maximally increased. Returns this task, or nil if none was
+  found."
   (let [net    (:net learner)
         adtree (:adtree learner)]
     (p :find-best-insert-task-out-tx
@@ -425,16 +425,16 @@
                                                      best-local-log-likelihood
                                                      (- old-local-log-likelihood)))]
                             (+ penalty log-likelihood))))]
-                {:op      :insert
-                 :from-id best-from-id
-                 :to-id   to-id
-                 :score   score})
-              {:op      :insert
-               :from-id to-id
-               :to-id   to-id
-               :score   0.0})))))))
+                (if (= best-from-id to-id)
+                  nil
+                  {:op      :insert
+                   :from-id best-from-id
+                   :to-id   to-id
+                   :score   score}))
+              nil)))))))
 
 (defnp find-next-task [learner n-total-parent base-log-likelihood to-id]
+  "Find best next task, or nil if none was found."
   (let [n-record     (:n-record (:adtree learner))
         base-penalty (* -0.5 (Math/log (double n-record)))
         base-score   (+ (* n-total-parent base-penalty)
@@ -442,12 +442,15 @@
         new-task     (find-best-insert-task learner to-id n-total-parent
                        base-penalty base-log-likelihood)
         oqf          (:operation-quality-factor learner)]
-    (if (and (not= (:from-id new-task) (:to-id new-task))
+    (if (and (some? new-task)
              (> (:score new-task) (/ base-score oqf)))
       new-task
-      {:op :num :to-id -1 :from-id -1 :score base-score})))
+      nil)))
 
 (defnp process-task [task learner i]
+  "Process the `task`.
+
+  This is thread `i` (used for logging)."
   (let [valid?
           (dosync ; Updates the net
             (if (is-task-valid? task (:net learner))
@@ -471,11 +474,12 @@
         best-task
           (find-next-task learner n-total-parent base-log-likelihood
             (:to-id task))]
-    (when (not= (:to-id best-task) -1)
+    (when (some? best-task)
       (log "new task on thread" i ":" best-task)
       (add-task (:tasks learner) best-task))))
 
 (defnp learn-structure [learner i n]
+  "Learn the structure of the network, thread `i` of `n`."
   (loop []
     (let [task (pop-task (:tasks learner))]
       (when (not (nil? task))
