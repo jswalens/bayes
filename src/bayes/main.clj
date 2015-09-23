@@ -5,6 +5,7 @@
             [random]
             [bayes.data :as data]
             [bayes.adtree :as adtree]
+            [bayes.net :as net]
             [bayes.learner :as learner]
             [taoensso.timbre :as timbre]
             [taoensso.timbre.profiling :refer [profile p]]))
@@ -171,9 +172,8 @@ Options:
             _ (p :run-learner (time (learner/run learner)))
             _ (println "done.")
             ; Check solution
-            ; TODO implement net/is-cycle? to check solution (optional)
-            ;status (net/is-cycle? (:net learner))
-            ;_ (when-not status (println "ERROR: solution is incorrect"))
+            status (p :check-solution (net/has-cycle? (:net learner)))
+            _ (when status (println "ERROR: solution is incorrect"))
             learn-score (p :score-solution (learner/score learner))
             _ (println "Learn score  =" learn-score)
             _ (println "Actual score =" actual-score)]
