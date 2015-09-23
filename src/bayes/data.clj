@@ -77,7 +77,7 @@
                             dependencies
                             (let [[fst & rst] queue]
                               (recur
-                                (vec (concat-uniq rst (net/parent-ids net fst)))
+                                (vec (concat rst (net/parent-ids net fst)))
                                 (cons fst dependencies)))))
                       done-1
                         (reduce #(bitmap/set %1 %2) done dependencies)

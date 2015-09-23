@@ -25,23 +25,25 @@
     []      [4 5 6] [4 5 6]
     [1 2 3] []      [1 2 3]))
 
-(def generated-data
-  {:data {:n-var 3
-          :n-record 4
-          :records '([1 0 0] [1 0 1] [0 0 0] [0 1 0])}
-   :net  [{:id 0 :parent-ids '()  :child-ids '()}
-          {:id 1 :parent-ids '(2) :child-ids '()}
-          {:id 2 :parent-ids '()  :child-ids '(1)}]})
-
 (defn- deref-net [net]
   (map deref net))
 
-(deftest generate
+(def generated-data-1
+  {:n-var 3
+   :n-record 4
+   :records '([1 0 0] [1 0 1] [0 0 0] [0 1 0])})
+
+(def generated-net-1
+  [{:id 0 :parent-ids '()  :child-ids '()}
+   {:id 1 :parent-ids '(2) :child-ids '()}
+   {:id 2 :parent-ids '()  :child-ids '(1)}])
+
+(deftest generate-1
   (random/set-seed 1)
   (let [params (assoc options/fast-params :record 4 :var 3)
         {data :data net :net} (data/generate params)]
-    (is (= (:data generated-data) data))
-    (is (= (:net  generated-data) (deref-net net)))))
+    (is (= generated-data-1 data))
+    (is (= generated-net-1 (deref-net net)))))
 
 (def generated-net-2
   [{:id 0  :parent-ids '(8 13 14 15)        :child-ids '(7 9 11)}
@@ -82,6 +84,20 @@
   (let [params {:number 10 :percent 30 :record 512 :var 32}
         {data :data net :net} (data/generate params)]
     (is (= generated-net-2 (deref-net net)))))
+
+(def generated-data-3
+  {:n-var 32
+   :n-record 4
+   :records '([0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0]
+              [0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0]
+              [0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 1 0 0 0 0]
+              [0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0])})
+
+(deftest generate-3
+  (random/set-seed 1)
+  (let [params {:number 10 :percent 30 :record 4 :var 32}
+        {data :data net :net} (data/generate params)]
+    (is (= generated-data-3 data))))
 
 (deftest compare-record
   (are [a b offset expected] (= expected (@#'bayes.data/compare-record a b offset))
