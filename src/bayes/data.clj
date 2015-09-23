@@ -3,7 +3,8 @@
             [bitmap]
             [random]
             [bayes.net :as net]
-            [taoensso.timbre.profiling :refer [profile p defnp]]))
+            [taoensso.timbre.profiling :refer [profile p defnp]])
+  (:import [java.util LinkedList]))
 
 (def ^:const DATA_PRECISION 100)
 
@@ -70,15 +71,15 @@
                 ; This node has no children, it is a leaf
                 (let [; Use breadth-first search to find net connected to this
                       ; leaf (i.e. ancestors of this leaf)
+                      queue (LinkedList.)
+                      _     (.add queue id)
                       dependencies
-                        (loop [queue        [id]
-                               dependencies (list)]
+                        (loop [dependencies (list)]
                           (if (empty? queue)
                             dependencies
-                            (let [[fst & rst] queue]
-                              (recur
-                                (vec (concat rst (net/parent-ids net fst)))
-                                (cons fst dependencies)))))
+                            (let [current (.pop queue)]
+                              (.addAll queue (net/parent-ids net current))
+                              (recur (cons current dependencies)))))
                       done-1
                         (reduce #(bitmap/set %1 %2) done dependencies)
                       order-1
