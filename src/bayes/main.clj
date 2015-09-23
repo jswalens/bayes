@@ -29,7 +29,6 @@
             _ (println "done.")
             ; Score original network
             actual-score (p :score-original (score-original net adtree params))
-            _ (println "actual score:" actual-score)
             ; Learn structure of Bayesian network
             _ (println "Learning structure...")
             learner (p :alloc-learner (learner/alloc adtree params))
