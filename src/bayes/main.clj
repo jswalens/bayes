@@ -1,12 +1,16 @@
 (ns bayes.main
   (:gen-class)
   (:require [clojure.tools.cli]
+            [clojure.string]
             [random]
             [bayes.data :as data]
             [bayes.adtree :as adtree]
             [bayes.learner :as learner]
             [taoensso.timbre :as timbre]
             [taoensso.timbre.profiling :refer [profile p]]))
+
+; Variations to enable.
+(def variations (atom []))
 
 (def cli-params
   [["-e" "--edge UINT"    "Max [e]dges learned per variable (-1 for no limit)"
@@ -37,7 +41,10 @@
     :default 16
     :parse-fn #(Integer/parseInt %)]
    ["-h" "--help"]
-   [""   "--profile"      "Enable profiling"
+   [nil  "--variations VARIATIONS" "Comma-separated list of variations to enable."
+    :default  []
+    :parse-fn #(map keyword (clojure.string/split % #","))]
+   [nil  "--profile"      "Enable profiling"
     :default false]])
 
 (def c-params
@@ -117,7 +124,11 @@ Options:
   "Parse the command line arguments.
 
   Ignores errors."
-  (:options (clojure.tools.cli/parse-opts args cli-params)))
+  (let [{:keys [options errors]} (clojure.tools.cli/parse-opts args cli-params)]
+    (when-not (empty? errors)
+      (println "ERROR: Error when parsing command line arguments: "
+        errors))
+    options))
 
 (defn score-original [net adtree params]
   "Score `net` without learning."
@@ -136,7 +147,10 @@ Options:
     (println "Insert penalty             =" (:insert params))
     (println "Max num edge learned / var =" (:edge params))
     (println "Operation quality factor   =" (:quality params))
+    (println "Variations                 =" (:variations params))
+    (println "Profiling?                 =" (:profile params))
     (random/set-seed (:seed params))
+    (reset! variations (:variations params))
     (timbre/set-level! (if (:profile params) :trace :error))
     ; Generate data
     (println "Generating data...")
