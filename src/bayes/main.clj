@@ -17,11 +17,10 @@
   "Main function. `args` should be a list of command line arguments."
   ; Initialization
   (let [params (options/set-args args)]
-    ; Generate data
-    (println "Generating data...")
     (profile :trace :all
-      (let [{data :data net :net}
-              (p :generate-data (time (data/generate params)))
+      (let [; Generate data
+            _ (println "Generating data...")
+            {:keys [data net]} (p :generate-data (time (data/generate params)))
             _ (println "done.")
             ; Generate adtree
             _ (println "Generating adtree...")
@@ -37,10 +36,10 @@
             ; Check solution
             status (p :check-solution (net/has-cycle? (:net learner)))
             _ (when status (println "ERROR: solution is incorrect"))
-            learn-score (p :score-solution (learner/score learner))
-            _ (println "Learn score  =" learn-score)
-            _ (println "Actual score =" actual-score)]
-        nil)))
+            ; Score learner network
+            learn-score (p :score-solution (learner/score learner))]
+        (println "Learn score  =" learn-score)
+        (println "Actual score =" actual-score))))
   ; Eliminate one minute wait (see doc shutdown-agents)
   ; shutdown-agents should be after profile, else RejectedExecutionException is
   ; raised in timbre
