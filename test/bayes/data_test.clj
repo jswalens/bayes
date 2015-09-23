@@ -1,7 +1,7 @@
 (ns bayes.data-test
   (:require [clojure.test :refer :all]
             [random]
-            [bayes.main :as main]
+            [bayes.options :as options]
             [bayes.data :as data]))
 
 ; Note: @#'bayes.data/bits->bitmap is a trick to get the private function
@@ -38,7 +38,7 @@
 
 (deftest generate
   (random/set-seed 1)
-  (let [params (assoc main/fast-params :record 4 :var 3)
+  (let [params (assoc options/fast-params :record 4 :var 3)
         {data :data net :net} (data/generate params)]
     (is (= (:data generated-data) data))
     (is (= (:net  generated-data) (deref-net net)))))

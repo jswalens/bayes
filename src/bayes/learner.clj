@@ -1,5 +1,6 @@
 (ns bayes.learner
-  (:require [bayes.net :as net]
+  (:require [bayes.options :as options]
+            [bayes.net :as net]
             [bayes.adtree :as adtree]
             [log :refer [log]]
             [taoensso.timbre.profiling :refer [profile p defnp]]))
@@ -392,16 +393,27 @@
                       (p :3-query-vectors (populate-query-vectors net to-id))
                     alternative-local-log-likelihoods
                       (p :4-alternatives
-                        (for-all [from-id (range (:n-var adtree))
-                                  :when (not (.contains invalid-ids from-id))]
-                          {:from-id from-id
-                           :local-log-likelihood
-                             (compute-local-log-likelihood
-                               to-id
-                               adtree
-                               queries
-                               (sort (conj query-vector from-id))
-                               (sort (conj parent-query-vector from-id)))}))
+                        (if (options/variation? :alternatives-parallel)
+                          (parallel-for-all [from-id (range (:n-var adtree))
+                                    :when (not (.contains invalid-ids from-id))]
+                            {:from-id from-id
+                             :local-log-likelihood
+                               (compute-local-log-likelihood
+                                 to-id
+                                 adtree
+                                 queries
+                                 (sort (conj query-vector from-id))
+                                 (sort (conj parent-query-vector from-id)))})
+                          (for-all [from-id (range (:n-var adtree))
+                                    :when (not (.contains invalid-ids from-id))]
+                            {:from-id from-id
+                             :local-log-likelihood
+                               (compute-local-log-likelihood
+                                 to-id
+                                 adtree
+                                 queries
+                                 (sort (conj query-vector from-id))
+                                 (sort (conj parent-query-vector from-id)))})))
                     old-local-log-likelihood
                       (p :5-old
                         (get-local-base-log-likelihood learner to-id))
