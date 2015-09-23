@@ -174,6 +174,13 @@
   "Sums `ns`."
   (reduce + ns))
 
+(defn- calculate-score [learner penalty-factor log-likelihood]
+  "Calculate the score, based on the number of records in `learner` and the
+  `penalty-factor` and `log-likelihood`."
+  (let [n-record       (:n-record (:adtree learner))
+        base-penalty   (* -0.5 (Math/log (double n-record)))]
+    (+ (* base-penalty penalty-factor) (* n-record log-likelihood))))
+
 (defn score [learner]
   "Score learner."
   (let [n-var   (:n-var (:adtree learner))
@@ -194,11 +201,8 @@
                   (:adtree learner)
                   queries
                   query-vector
-                  parent-query-vector))))
-        n-record (:n-record (:adtree learner))
-        penalty  (* -0.5 n-total-parent (Math/log n-record))
-        score    (+ penalty (* n-record log-likelihood))]
-    score))
+                  parent-query-vector))))]
+    (calculate-score learner n-total-parent log-likelihood)))
 
 ;
 ; run
@@ -215,14 +219,15 @@
                 (min maximum (+ start chunk)))]
     (range start stop)))
 
-(defn- create-task [v adtree base-log-likelihood this-local-log-likelihood]
+(defn- create-task [v learner base-log-likelihood this-local-log-likelihood]
   "Create and return task for variable `v`, or nil if no better local log
   likelihood exists."
   ; The C version has queries = [X, Y]; queryVector = [&X, &Y];
   ; parentQuery = Z; and parentQueryVector = [&Z].
   ; In Clojure, we have queries = [X, Y, Z]; query-vector = [0, 1];
   ; parent-query-vector = [2]
-  (let [; A. Find best local index
+  (let [adtree (:adtree learner)
+        ; A. Find best local index
         ; A.1 find local-log-likelihood for every variable except v
         other-local-log-likelihoods
           (for [vv (range (:n-var adtree))
@@ -277,16 +282,13 @@
             (first)
             (:index))]
     (if (> best-local-value this-local-log-likelihood)
-      (let [penalty        (* -0.5 (Math/log (double (:n-record adtree))))
-            log-likelihood (* (:n-record adtree)
-                              (+ base-log-likelihood
-                                 best-local-value
-                                 (- this-local-log-likelihood)))
-            score          (+ penalty log-likelihood)]
-        {:op      :insert
-         :from-id best-local-index
-         :to-id   v
-         :score   score})
+      {:op      :insert
+       :from-id best-local-index
+       :to-id   v
+       :score   (calculate-score learner 1.0
+                  (+ base-log-likelihood
+                     best-local-value
+                     (- this-local-log-likelihood)))}
       nil)))
 
 (defnp create-tasks [learner i n]
@@ -304,7 +306,7 @@
     (let [tasks (filter some?
                   (map-indexed
                     (fn [v_i v]
-                      (create-task v adtree base-log-likelihood
+                      (create-task v learner base-log-likelihood
                         (nth local-base-log-likelihoods v_i)))
                     vars))]
           ; TODO: maybe doall to force execution before tx?
@@ -363,7 +365,7 @@
   of the normal compare."
   (compare b a))
 
-(defnp find-best-insert-task [learner to-id n-total-parent base-penalty base-log-likelihood]
+(defnp find-best-insert-task [learner to-id n-total-parent base-log-likelihood]
   "Finds a task that inserts an edge into the net, such that the local log
   likelihood is maximally increased. Returns this task, or nil if none was
   found."
@@ -410,38 +412,31 @@
                             ; or, nothing happens:
                             {:from-id to-id :local-log-likelihood old-local-log-likelihood})
                           (sort-by :local-log-likelihood compare-higher)
-                          (first))) ; find one with highest local-log-likelihood
-                    score
-                      (p :7-score
-                        (if (= best-from-id to-id)
-                          0.0 ; best to do nothing
-                          (let [n-record (:n-record adtree)
-                                n-parent (inc (count parent-ids))
-                                penalty  (* base-penalty
-                                            (+ n-total-parent
-                                               (* n-parent (:insert-penalty learner))))
-                                log-likelihood (* n-record
-                                                  (+ base-log-likelihood
-                                                     best-local-log-likelihood
-                                                     (- old-local-log-likelihood)))]
-                            (+ penalty log-likelihood))))]
+                          (first)))] ; find one with highest local-log-likelihood
                 (if (= best-from-id to-id)
-                  nil
-                  {:op      :insert
-                   :from-id best-from-id
-                   :to-id   to-id
-                   :score   score}))
+                  nil ; best to do nothing
+                  (let [n-parent-new (inc (count parent-ids))
+                        n-total-parent-new
+                          (+ n-total-parent
+                             (* n-parent-new (:insert-penalty learner)))
+                        log-likelihood
+                          (+ base-log-likelihood
+                             best-local-log-likelihood
+                             (- old-local-log-likelihood))]
+                    {:op      :insert
+                     :from-id best-from-id
+                     :to-id   to-id
+                     :score   (calculate-score learner
+                                n-total-parent-new
+                                log-likelihood)})))
               nil)))))))
 
 (defnp find-next-task [learner n-total-parent base-log-likelihood to-id]
   "Find best next task, or nil if none was found."
-  (let [n-record     (:n-record (:adtree learner))
-        base-penalty (* -0.5 (Math/log (double n-record)))
-        base-score   (+ (* n-total-parent base-penalty)
-                        (* n-record base-log-likelihood))
-        new-task     (find-best-insert-task learner to-id n-total-parent
-                       base-penalty base-log-likelihood)
-        oqf          (:operation-quality-factor learner)]
+  (let [base-score (calculate-score learner n-total-parent base-log-likelihood)
+        new-task   (find-best-insert-task learner to-id n-total-parent
+                     base-log-likelihood)
+        oqf        (:operation-quality-factor learner)]
     (if (and (some? new-task)
              (> (:score new-task) (/ base-score oqf)))
       new-task
