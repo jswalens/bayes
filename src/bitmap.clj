@@ -1,4 +1,5 @@
-(ns bitmap)
+(ns bitmap
+  (:refer-clojure :exclude [set]))
 
 (defn create [length]
   "Create a bitmap of `length` falses."

@@ -1,4 +1,5 @@
 (ns bayes.data
+  (:refer-clojure :exclude [sort])
   (:require [clojure.math.numeric-tower :as math]
             [bitmap]
             [random]

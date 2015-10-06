@@ -1,4 +1,5 @@
-(ns priority-queue)
+(ns priority-queue
+  (:refer-clojure :exclude [remove]))
 
 (defn create []
   "Create an empty priority queue. Its elements will be ordered based on their
