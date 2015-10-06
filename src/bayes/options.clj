@@ -7,6 +7,8 @@
 ; Possible variations:
 ; * alternatives-parallel: in learner/find-best-insert-task, calculate the
 ;   alternatives in parallel.
+; * strict-adtree: in adtree/make-vary, do not generate the adtree lazily, but
+;   strictly.
 (def variations (atom []))
 
 (defn variation? [variation]
@@ -42,10 +44,10 @@
       :default 16
       :parse-fn #(Integer/parseInt %)]
      ["-h" "--help"]
-     [nil  "--variations VARIATIONS" "Comma-separated list of variations to enable."
+     ["-x" "--variations VARIATIONS" "Comma-separated list of variations to enable."
       :default  []
       :parse-fn #(map keyword (clojure.string/split % #","))]
-     [nil  "--profile"      "Enable profiling"
+     ["-m" "--profile"      "Enable profiling"
       :default false]])
 
   (def c-params

@@ -1,11 +1,17 @@
 (ns bayes.adtree
-  (:require [bayes.data :as data]
+  (:require [bayes.options :as options]
+            [bayes.data :as data]
             [log :refer [log]]
             [taoensso.timbre.profiling :refer [profile p defnp]]))
 
 ;
 ; make
 ;
+
+(defmacro for-all [seq-exprs body-expr]
+  `(doall
+    (for ~seq-exprs
+      ~body-expr)))
 
 (declare make-node)
 (declare make-vary)
@@ -18,8 +24,11 @@
   {:index       i
    :value       -1
    :count       n
-   :vary-vector (for [v (range (inc i) (:n-var data))]
-                  (make-vary parent-i v start n data))})
+   :vary-vector (if (options/variation? :strict-adtree)
+                  (for-all [v (range (inc i) (:n-var data))]
+                    (make-vary parent-i v start n data))
+                  (for [v (range (inc i) (:n-var data))]
+                    (make-vary parent-i v start n data)))})
 
 (defn- make-vary [parent-i i start n data]
   "Make an element of the vary vector of a node in the adtree."
