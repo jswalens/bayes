@@ -1,6 +1,7 @@
 (ns bayes.options
   (:require [clojure.tools.cli]
             [clojure.string]
+            [random]
             [taoensso.timbre :as timbre]))
 
 ; Variations to enable.
