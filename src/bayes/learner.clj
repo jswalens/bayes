@@ -11,10 +11,11 @@
       ~body-expr)))
 
 (defmacro parallel-for-all [seq-exprs body-expr]
-  `(map deref
-    (doall
-      (for ~seq-exprs
-        (future ~body-expr)))))
+  `(doall
+    (map deref
+      (doall
+        (for ~seq-exprs
+          (future ~body-expr))))))
 
 ;
 ; alloc
