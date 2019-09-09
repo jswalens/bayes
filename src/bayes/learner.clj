@@ -151,7 +151,7 @@
          (set-query-value queries (nth parent-query-vector i) 1)
          query-vector parent-query-vector))))
 
-(defn- compute-local-log-likelihood [id adtree queries query-vector parent-query-vector]
+(defnp compute-local-log-likelihood [id adtree queries query-vector parent-query-vector]
   (+ (compute-local-log-likelihood-helper 0 adtree (set-query-value queries id 0)
        query-vector parent-query-vector)
      (compute-local-log-likelihood-helper 0 adtree (set-query-value queries id 1)

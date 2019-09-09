@@ -1,7 +1,8 @@
 (ns bayes.adtree
   (:require [bayes.options :as options]
             [bayes.data :as data]
-            [log :refer [log]]))
+            [log :refer [log]]
+            [taoensso.tufte :as tufte :refer [p defnp]]))
 
 ;
 ; make
@@ -120,7 +121,7 @@
             ; QUERY_VALUE_WILDCARD
               (throw (Exception. (str "unrecognized query value " query-value))))))))
 
-(defn get-count [adtree queries query-vector]
+(defnp get-count [adtree queries query-vector]
   "Get count of (root node of) adtree."
   (let [last-query-index (if (empty? query-vector)
                            -1
