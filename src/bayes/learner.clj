@@ -396,24 +396,26 @@
                         (if (options/variation? :alternatives-parallel)
                           (parallel-for-all [from-id (range (:n-var adtree))
                                     :when (not (.contains invalid-ids from-id))]
-                            {:from-id from-id
-                             :local-log-likelihood
-                               (compute-local-log-likelihood
-                                 to-id
-                                 adtree
-                                 queries
-                                 (sort (conj query-vector from-id))
-                                 (sort (conj parent-query-vector from-id)))})
+                            (p :alternatives-iteration
+                              {:from-id from-id
+                               :local-log-likelihood
+                                 (compute-local-log-likelihood
+                                   to-id
+                                   adtree
+                                   queries
+                                   (sort (conj query-vector from-id))
+                                   (sort (conj parent-query-vector from-id)))}))
                           (for-all [from-id (range (:n-var adtree))
                                     :when (not (.contains invalid-ids from-id))]
-                            {:from-id from-id
-                             :local-log-likelihood
-                               (compute-local-log-likelihood
-                                 to-id
-                                 adtree
-                                 queries
-                                 (sort (conj query-vector from-id))
-                                 (sort (conj parent-query-vector from-id)))})))
+                            (p :alternatives-iteration
+                              {:from-id from-id
+                               :local-log-likelihood
+                                 (compute-local-log-likelihood
+                                   to-id
+                                   adtree
+                                   queries
+                                   (sort (conj query-vector from-id))
+                                   (sort (conj parent-query-vector from-id)))}))))
                     old-local-log-likelihood
                       (p :5-old
                         (get-local-base-log-likelihood learner to-id))
