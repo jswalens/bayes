@@ -3,7 +3,7 @@
             [bayes.net :as net]
             [bayes.adtree :as adtree]
             [log :refer [log]]
-            [taoensso.timbre.profiling :refer [p defnp]]))
+            [taoensso.tufte :as tufte :refer [p defnp]]))
 
 (defmacro for-all [seq-exprs body-expr]
   `(doall

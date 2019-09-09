@@ -2,7 +2,7 @@
   (:require [clojure.tools.cli]
             [clojure.string]
             [random]
-            [taoensso.timbre :as timbre]))
+            [taoensso.tufte :as tufte]))
 
 ; Variations to enable.
 ; Possible variations:
@@ -138,7 +138,7 @@ Options:
 
    (random/set-seed (:seed options))
    (reset! variations (:variations options))
-   (timbre/set-level! (if (:profile options) :trace :error))
+   (tufte/set-min-level! (if (:profile options) 0 6))
 
    (println "Random seed                =" (:seed options))
    (println "Number of vars             =" (:var options))
