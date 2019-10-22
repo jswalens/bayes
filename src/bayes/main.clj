@@ -49,7 +49,7 @@
   "Main function. `args` should be a list of command line arguments."
   (time (main args))
   ; Eliminate one minute wait (see doc shutdown-agents)
-  ;(Thread/sleep 100)
+  (await log/logger)
   (shutdown-agents))
 
 ; To run manually:
