@@ -12,15 +12,7 @@
   "Returns an empty node with `id`.
 
   The node is a ref. This is unlike the C version, where the parent-ids and
-  child-ids are separate refs. However, we want a transaction that updates the
-  parent-ids and another transaction that updates the child-ids to conflict:
-  otherwise, it is possible to introduce cycles. For instance, if transaction
-  A inserts an edge from node 1 to 2 (updating 1's childs and 2's parents), and
-  transaction B inserts an edge from 2 to 1 (updating 2's childs and 1's
-  parents), this creates a cycle. Therefore, these two transactions should
-  conflict. This is achieved by making the node a ref, instead of the separate
-  parent and child lists.
-  XXX: How does the C version prevent this issue?"
+  child-ids are separate refs."
   (ref
     {:id         id
      :parent-ids (priority-queue/create)    ; ordered list of parent ids
@@ -49,6 +41,12 @@
 
   Should be called in a transaction."
   (:child-ids @(nth net id)))
+
+(defn child-ids-ensured [net id]
+  "Get ids of children of node `id` in `net`.
+
+  Should be called in a transaction, and uses ensure to read the current node."
+  (:child-ids (ensure (nth net id))))
 
 ;
 ; insert, remove and reverse edge
@@ -85,7 +83,10 @@
     (.contains (parent-ids net to-id) from-id)))
 
 (defn has-path? [net from-id to-id]
-  "Returns true if there is a path from `from-id` to `to-id` in `net`."
+  "Returns true if there is a path from `from-id` to `to-id` in `net`.
+
+  Uses ensure to mark all nodes reachable from `from-id`. That way, a conflict
+  occurs if any of these nodes was updated by another transaction."
   (dosync
     (loop [queue   [from-id]
            visited #{}]
@@ -97,7 +98,8 @@
             (recur
               (concat
                 (rest queue)
-                (filter #(not (.contains visited %)) (child-ids net id)))
+                (filter #(not (.contains visited %))
+                  (child-ids-ensured net id)))
               (conj visited id))))))))
 
 (defn- node-in-cycle? [net id]
@@ -121,7 +123,7 @@
 (defn has-cycle? [net]
   "Does `net` contain any cycle? This should never be the case."
   (dosync
-    (reduce #(or %1 %2) (map #(node-in-cycle? net %) (range (count net))))))
+    (some #(node-in-cycle? net %) (range (count net)))))
 
 ;
 ; find-descendants
@@ -142,12 +144,13 @@
       (if (empty? queue)
         descendants
         (let [child-id (peek queue)]
-          (if (= child-id id)
+          (when (= child-id id)
             (log "ERROR: could not find descendants: node" id
               "is a descendant of itself (net contains a cycle)")
-            (recur
-              (into descendants (child-ids net child-id))
-              (vec (concat-uniq (pop queue) (child-ids net child-id))))))))))
+            (System/exit 2))
+          (recur
+            (into descendants (child-ids net child-id))
+            (vec (concat-uniq (pop queue) (child-ids net child-id)))))))))
 
 ;
 ; generate-random-edges

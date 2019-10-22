@@ -319,8 +319,8 @@
   (let [from (:from-id task)
         to   (:to-id task)]
     (case (:op task)
-      :insert  (not (or (net/has-edge? net from to)
-                        (net/has-path?  net to from)))
+      :insert  (dosync (not (or (net/has-edge? net from to)
+                                (net/has-path? net to from))))
       :remove  true ; can never create cycle, so always valid
       :reverse (dosync
                  (net/remove-edge net from to) ; temp remove edge for check
