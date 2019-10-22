@@ -305,13 +305,13 @@
         (set-local-base-log-likelihood learner
           (nth vars j) (nth local-base-log-likelihoods j)))
       (alter (:base-log-likelihood learner) + base-log-likelihood))
-    (let [tasks (filter some?
-                  (map-indexed
-                    (fn [v_i v]
-                      (create-task v learner base-log-likelihood
-                        (nth local-base-log-likelihoods v_i)))
-                    vars))]
-          ; TODO: maybe doall to force execution before tx?
+    (let [tasks (doall ; doall to force execution before tx below
+                  (filter some?
+                    (map-indexed
+                      (fn [v_i v]
+                        (create-task v learner base-log-likelihood
+                          (nth local-base-log-likelihoods v_i)))
+                      vars)))]
       (log "tasks created by thread" i ":" tasks)
       (add-tasks (:tasks learner) tasks))))
 
@@ -498,10 +498,8 @@
 
 (defnp run [learner]
   "Learn structure of the network, updates it."
-  (let [n-thread    (:n-thread learner)
-        par-map     (fn [f] (map (fn [i] (future (f i))) (range n-thread)))
-        par-deref   (fn [futs] (doseq [f futs] (deref f)))
-        create-futs (par-map #(create-tasks    learner % n-thread))
-        learn-futs  (par-map #(learn-structure learner % n-thread))]
-    (par-deref create-futs)
-    (par-deref learn-futs)))
+  (let [n (:n-thread learner)]
+    (p :create-tasks (time
+      (parallel-for-all [i (range n)] (create-tasks learner i n))))
+    (p :learn-structure (time
+      (parallel-for-all [i (range n)] (learn-structure learner i n))))))
