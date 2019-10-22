@@ -14,7 +14,7 @@ clj=`grep ":resource-paths" project.clj | sed -n 's/.*"resources\/\(.*\)\.jar".*
 date=`date "+%Y%m%dT%H%M"`
 result_path="$pwd/results/$date-$rev"
 
-: ${PARAMETERS:="-n 5 -r 512 -v 48"}
+: ${PARAMETERS:="-n 5 -r 128 -v 48"}
 
 if [ "$1" == "--all" ]; then
     benchmark_parameters="all"
