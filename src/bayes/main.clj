@@ -1,11 +1,13 @@
 (ns bayes.main
   (:gen-class)
+  (:refer-clojure :exclude [time])
   (:require [random]
             [bayes.options :as options]
             [bayes.data :as data]
             [bayes.adtree :as adtree]
             [bayes.net :as net]
             [bayes.learner :as learner]
+            [log :refer [log time]]
             [taoensso.tufte :as tufte :refer [profiled p format-pstats]]))
 
 (defn score-original [net adtree params]

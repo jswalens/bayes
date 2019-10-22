@@ -1,8 +1,9 @@
 (ns bayes.learner
+  (:refer-clojure :exclude [time])
   (:require [bayes.options :as options]
             [bayes.net :as net]
             [bayes.adtree :as adtree]
-            [log :refer [log]]
+            [log :refer [log time]]
             [taoensso.tufte :as tufte :refer [p defnp]]))
 
 (defmacro for-all [seq-exprs body-expr]
