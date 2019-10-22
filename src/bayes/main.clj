@@ -43,16 +43,14 @@
                   learn-score (p :score-solution (learner/score learner))]
               (println "Learn score  =" learn-score)
               (println "Actual score =" actual-score)))]
-    (when (:profile params) (println (format-pstats pstats)))
-    ; Eliminate one minute wait (see doc shutdown-agents)
-    ; shutdown-agents should be after profile, else RejectedExecutionException is
-    ; raised in tufte
-    ;(Thread/sleep 100)
-    (shutdown-agents)))
+    (when (:profile params) (println (format-pstats pstats)))))
 
 (defn -main [& args]
   "Main function. `args` should be a list of command line arguments."
-  (time (main args)))
+  (time (main args))
+  ; Eliminate one minute wait (see doc shutdown-agents)
+  ;(Thread/sleep 100)
+  (shutdown-agents))
 
 ; To run manually:
 ;(main *command-line-args*)
