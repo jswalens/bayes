@@ -4,6 +4,8 @@
 (def logger (agent nil))
 
 (defn log [& msgs]
+  "Print a message to stdout. By using an agent, we ensure messages aren't
+  interleaved."
   (send logger (fn [_] (apply println msgs)))
   nil)
 
