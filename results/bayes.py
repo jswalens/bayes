@@ -338,7 +338,7 @@ def draw_speedup(collected):
 
     #ax.set_title("Measured speed-up", fontsize="x-large")
 
-    ax.set_xlabel(r"Number of worker threads ($t$)", fontsize="large")
+    ax.set_xlabel(r"Max number of parallel transactions ($t$)", fontsize="large")
     ax.set_xscale("log", basex=2)
     xticks = [x for x in collected["median_speedups"][""].keys() if is_power_of_two(x)]
     ax.set_xticks(xticks)
