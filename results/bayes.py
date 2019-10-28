@@ -377,10 +377,15 @@ def draw_speedup(collected):
     ax.annotate(xy=(112, 2.55), s="maximum for $t = 112$:\nspeed-up = 2.81\ntime = 1195 ms",
         xytext=(-110, -70), textcoords="offset points", arrowprops=arrowprops)
 
+    # print(collected["median_speedups"]["parallel-for"][1])
+    # print(collected["quartiles"]["parallel-for"][1]["median"])
+    ax.annotate(xy=(1, 2.1), s="parallel loop for $t = 1$:\nspeed-up = 2.07\ntime = 1622 ms",
+        xytext=(5, 50), textcoords="offset points", arrowprops=arrowprops)
+
     # print(collected["median_speedups"]["parallel-for"][5])
     # print(collected["quartiles"]["parallel-for"][5]["median"])
     ax.annotate(xy=(5, 3.35), s="maximum for $t = 5$:\nspeed-up = 3.33\ntime = 1008 ms",
-        xytext=(-115, 10), textcoords="offset points", arrowprops=arrowprops)
+        xytext=(20, 10), textcoords="offset points", arrowprops=arrowprops)
 
     plt.savefig("bayes-speedup-{}.pdf".format(PATH), bbox_inches="tight")
     #plt.show()
