@@ -326,7 +326,7 @@ def draw_speedup(collected):
     variations = collected["median_speedups"].keys()
     LABELS = {
         "":             "Original version",
-        "parallel-for": "Parallel loop ({} tasks\nper worker thread)".format(16),
+        "parallel-for": "Parallel loop ({} tasks\nper worker thread)".format(32),
     }
     COLORS = {
         "":             "#003399",
