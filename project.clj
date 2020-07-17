@@ -1,4 +1,4 @@
-(defproject bayes "10.0.0"
+(defproject bayes "11.0.0"
   :description "Bayes benchmark from STAMP in Clojure, using transactional futures."
   :url "http://soft.vub.ac.be/~jswalens/chocola/"
   :dependencies [[org.clojure/clojure "1.10.1"]
